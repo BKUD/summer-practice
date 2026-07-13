@@ -5,6 +5,8 @@ from uml_dsl.tdl_lexer import lex
 from uml_dsl.tdl_parser import parse_tdl
 from uml_dsl.tdl_serializer import diagram_to_tdl
 from pathlib import Path
+import xml.etree.ElementTree as ET
+
 
 TDL_SOURCE = """
 КЛАСС Робот
@@ -191,6 +193,11 @@ def test_robot_biologist_full_roundtrip(tmp_path):
 
     restored_from_svg = parse_result.diagram
 
+    assert (
+            restored_from_svg.layout_commands
+            == original.layout_commands
+    )
+
     # Pydantic → TDL
     restored_tdl = diagram_to_tdl(restored_from_svg)
     (tmp_path / "robot_biologist_restored.tdl").write_text(
@@ -198,10 +205,29 @@ def test_robot_biologist_full_roundtrip(tmp_path):
         encoding="utf-8",
     )
 
+    assert "РАЗМЕЩЕНИЕ" in restored_tdl
+    assert (
+            "РАСПРЕДЕЛИТЬ ПО ГОРИЗОНТАЛИ "
+            "РоботБиолог ЛабиринтРоботБиолог "
+            "ЯчейкаРоботБиолог ТипЯчеекБио ШАГ 10"
+            in restored_tdl
+    )
+    assert (
+            "ПРИВЯЗАТЬ Итератор ЛЕВЕЕ РоботБиолог"
+            in restored_tdl
+    )
+    assert (
+            "ПРИВЯЗАТЬ ТипНаправленийБиоНапр "
+            "ВЫШЕ Итератор"
+            in restored_tdl
+    )
+
     # Восстановленный TDL → Pydantic
     rebuilt = build_diagram(
         parse_tdl(lex(restored_tdl))
     )
+
+    assert rebuilt.layout_commands == original.layout_commands
 
     # Проверяем классы.
     assert set(rebuilt.classifiers) == set(original.classifiers)
@@ -226,3 +252,35 @@ def test_robot_biologist_full_roundtrip(tmp_path):
     )
 
     assert rebuilt_associations == original_associations
+
+def test_invalid_svg_layout_metadata_is_rejected():
+    source = """
+КЛАСС Пример
+КОНЕЦ КЛАСС
+"""
+
+    diagram = build_diagram(parse_tdl(lex(source)))
+    svg = diagram_to_graphviz_svg(diagram)
+
+    root = ET.fromstring(svg)
+    root.set("data-layout", "{broken json}")
+
+    broken_svg = ET.tostring(
+        root,
+        encoding="unicode",
+    )
+
+    result = parse_svg_to_diagram(broken_svg)
+
+    assert not result.success
+    assert any(
+        "data-layout" in str(error)
+        for error in result.errors
+    ), result.errors
+
+    assert not result.success
+    assert result.diagram is not None
+    assert any(
+        "data-layout" in str(error)
+        for error in result.errors
+    ), result.errors

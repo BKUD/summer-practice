@@ -24,6 +24,16 @@ def _format_value(value: Any) -> str:
     # поскольку текущий лексер TDL распознаёт только целые NUMBER.
     return _quote(str(value))
 
+def _format_coordinate(value: object) -> str:
+    number = float(value)
+
+    if not number.is_integer():
+        raise ValueError(
+            "Текущая грамматика TDL поддерживает "
+            "только целочисленные координаты"
+        )
+
+    return str(int(number))
 
 def _format_association_end(end: AssociationEnd) -> str:
     result = end.participant.name
@@ -176,5 +186,73 @@ def diagram_to_tdl(diagram: ClassDiagram) -> str:
 
         if association.is_derived:
             lines.append("  ПРОИЗВОДНАЯ")
+    if diagram.layout_commands:
+        lines.append("")
+        lines.append("РАЗМЕЩЕНИЕ")
+
+        for command in diagram.layout_commands:
+            kind = command.get("kind")
+
+            if kind == "align":
+                where = command.get("where")
+                elements = command.get("elements", [])
+
+                if where and elements:
+                    lines.append(
+                        "  ВЫРОВНЯТЬ ПО "
+                        f"{where} "
+                        + " ".join(elements)
+                    )
+
+            elif kind == "distribute":
+                axis = command.get("axis")
+                elements = command.get("elements", [])
+                step = command.get("step")
+
+                if axis and elements:
+                    line = (
+                        "  РАСПРЕДЕЛИТЬ ПО "
+                        f"{axis} "
+                        + " ".join(elements)
+                    )
+
+                    if step is not None:
+                        line += f" ШАГ {int(step)}"
+
+                    lines.append(line)
+
+            elif kind == "bind":
+                elem1 = command.get("elem1")
+                direction = command.get("direction")
+                elem2 = command.get("elem2")
+
+                if elem1 and direction and elem2:
+                    lines.append(
+                        f"  ПРИВЯЗАТЬ "
+                        f"{elem1} {direction} {elem2}"
+                    )
+
+            elif kind == "fix":
+                element = command.get("element")
+                x = command.get("x")
+                y = command.get("y")
+
+                if (
+                    element is not None
+                    and x is not None
+                    and y is not None
+                ):
+                    lines.append(
+                        f"  ЗАФИКСИРОВАТЬ {element} В "
+                        f"({_format_coordinate(x)}, "
+                        f"{_format_coordinate(y)})"
+                    )
+
+            else:
+                raise ValueError(
+                    f"Неизвестная команда размещения: {kind!r}"
+                )
+
+        lines.append("КОНЕЦ РАЗМЕЩЕНИЕ")
 
     return "\n".join(lines).rstrip() + "\n"

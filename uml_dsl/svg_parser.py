@@ -74,6 +74,32 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
     
     # Создаём пустую диаграмму
     diagram = ClassDiagram(title="Imported from SVG")
+
+    layout_json = root.get("data-layout")
+
+    if layout_json:
+        try:
+            layout_commands = json.loads(layout_json)
+
+            if not isinstance(layout_commands, list):
+                raise ValueError(
+                    "data-layout должен содержать JSON-массив"
+                )
+
+            if not all(
+                    isinstance(command, dict)
+                    for command in layout_commands
+            ):
+                raise ValueError(
+                    "Каждая команда data-layout должна быть объектом"
+                )
+
+            diagram.layout_commands = layout_commands
+
+        except (json.JSONDecodeError, ValueError, TypeError) as exc:
+            errors.append(
+                f"Некорректные данные размещения data-layout: {exc}"
+            )
     
     # 1. Сначала парсим все классы (они нужны для ссылок в отношениях)
     class_positions = {}
@@ -301,10 +327,10 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
     
     # Возвращаем результат с диаграммой и любыми накопленными предупреждениями
     return ParseResult(
-        success=True,
+        success=not errors,
         diagram=diagram,
-        warnings=warnings if not errors else [],  # не включаем предупреждения если были ошибки
-        errors=errors
+        errors=errors,
+        warnings=warnings,
     )
 
 

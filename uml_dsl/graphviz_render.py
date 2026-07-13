@@ -308,6 +308,15 @@ def enrich_svg_with_data_attrs(
 ) -> str:
     """Add data-* attributes to Graphviz-generated SVG."""
     root = ET.fromstring(svg_text)
+    root.set("data-tdl-schema", "1")
+    root.set(
+        "data-layout",
+        json.dumps(
+            diagram.layout_commands,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ),
+    )
 
     rel_queues: Dict[Tuple[str, str], List[Dict[str, str]]] = defaultdict(list)
 
