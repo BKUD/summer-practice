@@ -166,6 +166,9 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
         
         src_nav = elem.get('data-src-navigable')
         tgt_nav = elem.get('data-tgt-navigable')
+
+        src_role = elem.get("data-src-role")
+        tgt_role = elem.get("data-tgt-role")
         
         # Парсим кратность с обработкой ошибок
         src_mult_obj = None
@@ -181,19 +184,25 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
                 tgt_mult_obj = MultiplicityRange.from_str(tgt_multiplicity)
             except (ValueError, IndexError) as e:
                 warnings.append(f"Ассоциация '{src}→{tgt}': некорректная кратность целевой '{tgt_multiplicity}'")
-        
+
         end1 = AssociationEnd(
             participant=src_cls,
+            role=src_role or None,
             multiplicity=src_mult_obj,
             aggregation=AggregationKind(src_agg),
-            navigable={'true': True, 'false': False}.get(src_nav) if src_nav else None
+            navigable={"true": True, "false": False}.get(src_nav)
+            if src_nav
+            else None,
         )
-        
+
         end2 = AssociationEnd(
             participant=tgt_cls,
+            role=tgt_role or None,
             multiplicity=tgt_mult_obj,
             aggregation=AggregationKind(tgt_agg),
-            navigable={'true': True, 'false': False}.get(tgt_nav) if tgt_nav else None
+            navigable={"true": True, "false": False}.get(tgt_nav)
+            if tgt_nav
+            else None,
         )
         
         assoc = Association(

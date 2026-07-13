@@ -41,3 +41,62 @@ def test_graphviz_roundtrip_preserves_class_members():
 
     assert restored_class.operations[0].name == "двигаться"
     assert restored_class.operations[0].return_type == "int"
+
+RELATION_TDL = """
+КЛАСС Контейнер
+КОНЕЦ КЛАСС
+
+КЛАСС Элемент
+КОНЕЦ КЛАСС
+
+АССОЦИАЦИЯ
+  Контейнер 1 : контейнер
+  --
+  Элемент [0..*] : элементы
+  ИМЯ "содержит"
+"""
+
+
+def test_graphviz_roundtrip_preserves_association():
+    original = build_diagram(parse_tdl(lex(RELATION_TDL)))
+
+    svg = diagram_to_graphviz_svg(original)
+    result = parse_svg_to_diagram(svg)
+
+    assert result.success, result.errors
+    assert result.diagram is not None
+
+    restored = result.diagram
+
+    assert len(original.associations) == 1
+    assert len(restored.associations) == 1
+
+    original_assoc = original.associations[0]
+    restored_assoc = restored.associations[0]
+
+    assert restored_assoc.name == original_assoc.name
+    assert restored_assoc.is_derived == original_assoc.is_derived
+    assert len(restored_assoc.ends) == len(original_assoc.ends)
+
+    for original_end, restored_end in zip(
+        original_assoc.ends,
+        restored_assoc.ends,
+    ):
+        assert (
+            restored_end.participant.name
+            == original_end.participant.name
+        )
+        assert restored_end.role == original_end.role
+        assert restored_end.navigable == original_end.navigable
+
+        assert restored_end.multiplicity is not None
+        assert original_end.multiplicity is not None
+
+        assert (
+            restored_end.multiplicity.lower
+            == original_end.multiplicity.lower
+        )
+        assert (
+            restored_end.multiplicity.upper
+            == original_end.multiplicity.upper
+        )

@@ -143,15 +143,40 @@ def enrich_svg_with_data_attrs(
             continue
         src = assoc.ends[0].participant.name
         tgt = assoc.ends[1].participant.name
-        rel_queues[(src, tgt)].append(
-            {
-                "data-type": "association",
-                "data-src": src,
-                "data-tgt": tgt,
-                "data-name": assoc.name or "",
-                "data-derived": str(assoc.is_derived).lower(),
-            }
-        )
+        assoc_attrs = {
+            "data-type": "association",
+            "data-src": src,
+            "data-tgt": tgt,
+            "data-name": assoc.name or "",
+            "data-derived": str(assoc.is_derived).lower(),
+        }
+
+        src_end = assoc.ends[0]
+        tgt_end = assoc.ends[1]
+
+        if src_end.role is not None:
+            assoc_attrs["data-src-role"] = src_end.role
+
+        if tgt_end.role is not None:
+            assoc_attrs["data-tgt-role"] = tgt_end.role
+
+        if src_end.multiplicity is not None:
+            assoc_attrs["data-src-multiplicity"] = str(src_end.multiplicity)
+
+        if tgt_end.multiplicity is not None:
+            assoc_attrs["data-tgt-multiplicity"] = str(tgt_end.multiplicity)
+
+        assoc_attrs["data-src-aggregation"] = src_end.aggregation.value
+        assoc_attrs["data-tgt-aggregation"] = tgt_end.aggregation.value
+
+        if src_end.navigable is not None:
+            assoc_attrs["data-src-navigable"] = str(src_end.navigable).lower()
+
+        if tgt_end.navigable is not None:
+            assoc_attrs["data-tgt-navigable"] = str(tgt_end.navigable).lower()
+
+        rel_queues[(src, tgt)].append(assoc_attrs)
+
     for gen in diagram.generalizations:
         src = gen.specific.name
         tgt = gen.general.name
