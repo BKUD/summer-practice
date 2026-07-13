@@ -121,3 +121,20 @@ def test_graphviz_roundtrip_preserves_association():
     assert rebuilt_assoc.name == "содержит"
     assert rebuilt_assoc.ends[0].role == "контейнер"
     assert rebuilt_assoc.ends[1].role == "элементы"
+
+def test_missing_multiplicity_is_not_converted_to_many():
+    source = """
+КЛАСС Пример
+  АТРИБУТЫ
+    + значение : int
+КОНЕЦ КЛАСС
+"""
+
+    diagram = build_diagram(parse_tdl(lex(source)))
+    attribute = diagram.classifiers["Пример"].attributes[0]
+
+    assert attribute.multiplicity is None
+
+    svg = diagram_to_graphviz_svg(diagram)
+
+    assert "[0..*]" not in svg

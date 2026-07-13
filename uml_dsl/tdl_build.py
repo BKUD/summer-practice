@@ -27,16 +27,35 @@ def _visibility(s: Optional[str]):
     return {"+": Visibility.PUBLIC, "-": Visibility.PRIVATE, "#": Visibility.PROTECTED, "~": Visibility.PACKAGE}.get(s)
 
 
-def _parse_multiplicity(s: Optional[str]) -> Optional[MultiplicityRange]:
-    if not s or s == "*":
+def _parse_multiplicity(
+    s: Optional[str],
+) -> Optional[MultiplicityRange]:
+    if s is None or not s.strip():
+        return None
+
+    if s == "*":
         return MultiplicityRange(lower=0, upper=None)
+
     if ".." in s:
-        parts = s.split("..")
-        lo = int(parts[0].strip())
-        up = None if parts[1].strip() == "*" else int(parts[1].strip())
-        return MultiplicityRange(lower=lo, upper=up)
-    n = int(s)
-    return MultiplicityRange(lower=n, upper=n)
+        lower_text, upper_text = s.split("..", 1)
+
+        lower = int(lower_text.strip())
+        upper = (
+            None
+            if upper_text.strip() == "*"
+            else int(upper_text.strip())
+        )
+
+        return MultiplicityRange(
+            lower=lower,
+            upper=upper,
+        )
+
+    value = int(s)
+    return MultiplicityRange(
+        lower=value,
+        upper=value,
+    )
 
 
 def _map_type(t: Optional[str]) -> Optional[str]:

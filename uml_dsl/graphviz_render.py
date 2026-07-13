@@ -20,24 +20,49 @@ def _q(value: str) -> str:
 
 
 def _node_label(cls) -> str:
-    """Build Graphviz record label for UML class."""
-    title = cls.name
+    """Создаёт HTML-подобную UML-метку для Graphviz."""
+
+    class_name = html.escape(cls.name)
+
     if getattr(cls, "is_abstract", False):
-        title = f"<I>{html.escape(title)}</I>"
-    else:
-        title = html.escape(title)
+        class_name = f"<I>{class_name}</I>"
+
+    class_name = f"<B>{class_name}</B>"
 
     if getattr(cls, "stereotype", None):
-        st = html.escape(cls.stereotype.value)
-        title = f"&laquo;{st}&raquo;<BR/>{title}"
+        stereotype = html.escape(cls.stereotype.value)
+        title = f"&laquo;{stereotype}&raquo;<BR/>{class_name}"
+    else:
+        title = class_name
 
-    attrs = "<BR ALIGN=\"LEFT\"/>".join(
-        html.escape(a.to_text()) for a in getattr(cls, "attributes", [])
-    ) or " "
-    ops = "<BR ALIGN=\"LEFT\"/>".join(
-        html.escape(o.to_text()) for o in getattr(cls, "operations", [])
-    ) or " "
-    return f"<{title}<BR/>{attrs}<BR/>{ops}>"
+    attributes = "<BR ALIGN=\"LEFT\"/>".join(
+        html.escape(attribute.to_text())
+        for attribute in getattr(cls, "attributes", [])
+    )
+
+    operations = "<BR ALIGN=\"LEFT\"/>".join(
+        html.escape(operation.to_text())
+        for operation in getattr(cls, "operations", [])
+    )
+
+    if not attributes:
+        attributes = "&#160;"
+
+    if not operations:
+        operations = "&#160;"
+
+    return (
+        "<"
+        '<TABLE BORDER="1" CELLBORDER="0" '
+        'CELLSPACING="0" CELLPADDING="5">'
+        f"<TR><TD>{title}</TD></TR>"
+        "<HR/>"
+        f'<TR><TD ALIGN="LEFT">{attributes}</TD></TR>'
+        "<HR/>"
+        f'<TR><TD ALIGN="LEFT">{operations}</TD></TR>'
+        "</TABLE>"
+        ">"
+    )
 
 def _requires_tb_rankdir(diagram: ClassDiagram) -> bool:
     return any(
@@ -151,7 +176,7 @@ def diagram_to_dot(diagram: ClassDiagram) -> Tuple[str, Dict[str, str]]:
             f"  graph [rankdir={rankdir}, splines=ortho, "
             "nodesep=0.8, ranksep=1.0, pad=0.3];"
         ),
-        "  node [shape=box, fontsize=10, fontname=\"Arial\"];",
+        '  node [shape=plain, fontsize=10, fontname="Arial"];',
         "  edge [fontsize=9, fontname=\"Arial\"];",
     ]
 
@@ -160,7 +185,9 @@ def diagram_to_dot(diagram: ClassDiagram) -> Tuple[str, Dict[str, str]]:
         node_map[node_id] = name
         name_to_node[name] = node_id
         label = _node_label(cls)
-        lines.append(f"  {node_id} [label={_q(label)} shape=plaintext];")
+        lines.append(
+            f"  {node_id} [shape=plain, label={label}];"
+        )
 
     lines.extend(_layout_to_dot(diagram, name_to_node))
 

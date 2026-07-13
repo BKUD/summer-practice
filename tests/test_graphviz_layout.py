@@ -83,3 +83,21 @@ def test_bind_commands_are_translated_to_dot():
     assert f"{node_c} -> {node_a}" in dot
 
     assert dot.count('class="layout-edge"') == 2
+
+def test_class_uses_graphviz_html_label():
+    diagram = build_diagram(parse_tdl(lex("""
+КЛАСС Пример
+  АТРИБУТЫ
+    + значение : int
+  ОПЕРАЦИИ
+    + получить() : int
+КОНЕЦ КЛАСС
+""")))
+
+    dot, _ = diagram_to_dot(diagram)
+
+    assert "label=<<TABLE" in dot
+    assert 'label="<TABLE' not in dot
+    assert "<HR/>" in dot
+    assert "значение" in dot
+    assert "получить" in dot
