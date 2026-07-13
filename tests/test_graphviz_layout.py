@@ -101,3 +101,26 @@ def test_class_uses_graphviz_html_label():
     assert "<HR/>" in dot
     assert "значение" in dot
     assert "получить" in dot
+
+def test_association_labels_and_multiplicities_are_rendered():
+    source = """
+КЛАСС Целое
+КОНЕЦ КЛАСС
+
+КЛАСС Часть
+КОНЕЦ КЛАСС
+
+АССОЦИАЦИЯ
+  Целое 1 : контейнер
+  --
+  Часть [0..*] : элементы
+  ИМЯ "содержит"
+"""
+
+    diagram = build_diagram(parse_tdl(lex(source)))
+    dot, _ = diagram_to_dot(diagram)
+
+    assert 'label="содержит"' in dot
+    assert 'xlabel="содержит"' not in dot
+    assert 'taillabel="контейнер 1"' in dot
+    assert 'headlabel="элементы 0..*"' in dot

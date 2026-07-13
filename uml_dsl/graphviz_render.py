@@ -163,6 +163,19 @@ def _layout_to_dot(
 
     return lines
 
+def _association_end_label(end) -> str:
+    """Формирует подпись полюса: роль и кратность."""
+
+    parts: List[str] = []
+
+    if end.role:
+        parts.append(end.role)
+
+    if end.multiplicity is not None:
+        parts.append(str(end.multiplicity))
+
+    return " ".join(parts)
+
 def diagram_to_dot(diagram: ClassDiagram) -> Tuple[str, Dict[str, str]]:
     """Render diagram to DOT and return node-id -> class-name map."""
     node_map: Dict[str, str] = {}
@@ -173,8 +186,9 @@ def diagram_to_dot(diagram: ClassDiagram) -> Tuple[str, Dict[str, str]]:
     lines: List[str] = [
         "digraph UML {",
         (
-            f"  graph [rankdir={rankdir}, splines=ortho, "
-            "nodesep=0.8, ranksep=1.0, pad=0.3];"
+            f"  graph [rankdir={rankdir}, splines=polyline, "
+            "nodesep=1.0, ranksep=1.0, pad=0.3, "
+            "forcelabels=true, outputorder=edgesfirst];"
         ),
         '  node [shape=plain, fontsize=10, fontname="Arial"];',
         "  edge [fontsize=9, fontname=\"Arial\"];",
@@ -192,22 +206,49 @@ def diagram_to_dot(diagram: ClassDiagram) -> Tuple[str, Dict[str, str]]:
     lines.extend(_layout_to_dot(diagram, name_to_node))
 
     for assoc in diagram.associations:
-        if not assoc.is_binary():
-            continue
-        src = assoc.ends[0].participant.name
-        tgt = assoc.ends[1].participant.name
+        src_end = assoc.ends[0]
+        tgt_end = assoc.ends[1]
+
+        src = src_end.participant.name
+        tgt = tgt_end.participant.name
+
         if src not in name_to_node or tgt not in name_to_node:
             continue
+
         src_id = name_to_node[src]
         tgt_id = name_to_node[tgt]
-        attrs = ["arrowhead=none", "color=black"]
+
+        attrs = [
+            "arrowhead=none",
+            "color=black",
+            "penwidth=1.0",
+            "fontsize=9",
+            'fontname="Arial"',
+            "labelfloat=true",
+            "labeldistance=2.0",
+            "labelangle=25",
+        ]
+
         if assoc.name:
             attrs.append(f"label={_q(assoc.name)}")
-        if assoc.ends[0].aggregation == AggregationKind.AGGREGATION:
-            attrs += ["dir=both", "arrowtail=odiamond"]
-        elif assoc.ends[0].aggregation == AggregationKind.COMPOSITION:
-            attrs += ["dir=both", "arrowtail=diamond"]
-        lines.append(f"  {src_id} -> {tgt_id} [{', '.join(attrs)}];")
+
+        src_label = _association_end_label(src_end)
+        tgt_label = _association_end_label(tgt_end)
+
+        if src_label:
+            attrs.append(f"taillabel={_q(src_label)}")
+
+        if tgt_label:
+            attrs.append(f"headlabel={_q(tgt_label)}")
+
+        if src_end.aggregation == AggregationKind.AGGREGATION:
+            attrs.extend(["dir=both", "arrowtail=odiamond"])
+        elif src_end.aggregation == AggregationKind.COMPOSITION:
+            attrs.extend(["dir=both", "arrowtail=diamond"])
+
+        lines.append(
+            f"  {src_id} -> {tgt_id} [{', '.join(attrs)}];"
+        )
 
     for gen in diagram.generalizations:
         src = gen.specific.name
@@ -271,20 +312,24 @@ def enrich_svg_with_data_attrs(
     rel_queues: Dict[Tuple[str, str], List[Dict[str, str]]] = defaultdict(list)
 
     for assoc in diagram.associations:
-        if not assoc.is_binary():
+        if len(assoc.ends) < 2:
             continue
-        src = assoc.ends[0].participant.name
-        tgt = assoc.ends[1].participant.name
+
+        src_end = assoc.ends[0]
+        tgt_end = assoc.ends[1]
+
+        src = src_end.participant.name
+        tgt = tgt_end.participant.name
+
         assoc_attrs = {
             "data-type": "association",
             "data-src": src,
             "data-tgt": tgt,
             "data-name": assoc.name or "",
             "data-derived": str(assoc.is_derived).lower(),
+            "data-src-aggregation": src_end.aggregation.value,
+            "data-tgt-aggregation": tgt_end.aggregation.value,
         }
-
-        src_end = assoc.ends[0]
-        tgt_end = assoc.ends[1]
 
         if src_end.role is not None:
             assoc_attrs["data-src-role"] = src_end.role
@@ -293,19 +338,24 @@ def enrich_svg_with_data_attrs(
             assoc_attrs["data-tgt-role"] = tgt_end.role
 
         if src_end.multiplicity is not None:
-            assoc_attrs["data-src-multiplicity"] = str(src_end.multiplicity)
+            assoc_attrs["data-src-multiplicity"] = str(
+                src_end.multiplicity
+            )
 
         if tgt_end.multiplicity is not None:
-            assoc_attrs["data-tgt-multiplicity"] = str(tgt_end.multiplicity)
-
-        assoc_attrs["data-src-aggregation"] = src_end.aggregation.value
-        assoc_attrs["data-tgt-aggregation"] = tgt_end.aggregation.value
+            assoc_attrs["data-tgt-multiplicity"] = str(
+                tgt_end.multiplicity
+            )
 
         if src_end.navigable is not None:
-            assoc_attrs["data-src-navigable"] = str(src_end.navigable).lower()
+            assoc_attrs["data-src-navigable"] = str(
+                src_end.navigable
+            ).lower()
 
         if tgt_end.navigable is not None:
-            assoc_attrs["data-tgt-navigable"] = str(tgt_end.navigable).lower()
+            assoc_attrs["data-tgt-navigable"] = str(
+                tgt_end.navigable
+            ).lower()
 
         rel_queues[(src, tgt)].append(assoc_attrs)
 
