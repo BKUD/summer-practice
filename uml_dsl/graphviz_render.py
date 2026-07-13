@@ -39,10 +39,13 @@ def _node_label(cls) -> str:
     ) or " "
     return f"<{title}<BR/>{attrs}<BR/>{ops}>"
 
-def _has_horizontal_distribution(diagram: ClassDiagram) -> bool:
+def _requires_tb_rankdir(diagram: ClassDiagram) -> bool:
     return any(
-        command.get("kind") == "distribute"
-        and command.get("axis") == "ГОРИЗОНТАЛИ"
+        (
+            command.get("kind") == "distribute"
+            and command.get("axis") == "ГОРИЗОНТАЛИ"
+        )
+        or command.get("kind") == "bind"
         for command in diagram.layout_commands
     )
 
@@ -71,13 +74,11 @@ def _layout_to_dot(
         if len(node_ids) < 2:
             continue
 
-        # Все перечисленные узлы должны находиться в одной строке.
         lines.append(f"  subgraph layout_horizontal_{command_index} {{")
         lines.append("    rank=same;")
         lines.append("    " + "; ".join(node_ids) + ";")
         lines.append("  }")
 
-        # Невидимые рёбра фиксируют порядок слева направо.
         for edge_index, (left, right) in enumerate(
             zip(node_ids, node_ids[1:])
         ):
@@ -88,6 +89,53 @@ def _layout_to_dot(
                 'class="layout-edge"];'
             )
 
+    for command_index, command in enumerate(diagram.layout_commands):
+        if command.get("kind") != "bind":
+            continue
+
+        elem1 = command.get("elem1")
+        elem2 = command.get("elem2")
+        direction = command.get("direction")
+
+        if elem1 not in name_to_node or elem2 not in name_to_node:
+            continue
+
+        node1 = name_to_node[elem1]
+        node2 = name_to_node[elem2]
+
+        if direction in ("ЛЕВЕЕ", "ПРАВЕЕ"):
+            left, right = (
+                (node1, node2)
+                if direction == "ЛЕВЕЕ"
+                else (node2, node1)
+            )
+
+            lines.append(f"  subgraph layout_bind_{command_index} {{")
+            lines.append("    rank=same;")
+            lines.append(f"    {left}; {right};")
+            lines.append("  }")
+
+            lines.append(
+                f"  {left} -> {right} "
+                "[style=invis, weight=200, constraint=true, "
+                f'id="layout-bind-{command_index}", '
+                'class="layout-edge"];'
+            )
+
+        elif direction in ("ВЫШЕ", "НИЖЕ"):
+            top, bottom = (
+                (node1, node2)
+                if direction == "ВЫШЕ"
+                else (node2, node1)
+            )
+
+            lines.append(
+                f"  {top} -> {bottom} "
+                "[style=invis, weight=200, constraint=true, minlen=1, "
+                f'id="layout-bind-{command_index}", '
+                'class="layout-edge"];'
+            )
+
     return lines
 
 def diagram_to_dot(diagram: ClassDiagram) -> Tuple[str, Dict[str, str]]:
@@ -95,7 +143,7 @@ def diagram_to_dot(diagram: ClassDiagram) -> Tuple[str, Dict[str, str]]:
     node_map: Dict[str, str] = {}
     name_to_node: Dict[str, str] = {}
 
-    rankdir = "TB" if _has_horizontal_distribution(diagram) else "LR"
+    rankdir = "TB" if _requires_tb_rankdir(diagram) else "LR"
 
     lines: List[str] = [
         "digraph UML {",

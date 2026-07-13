@@ -42,3 +42,44 @@ def test_horizontal_distribution_is_translated_to_dot():
     assert f"{node_a} -> {node_b}" in dot
     assert f"{node_b} -> {node_c}" in dot
     assert 'class="layout-edge"' in dot
+
+BIND_TDL_SOURCE = """
+КЛАСС A
+КОНЕЦ КЛАСС
+
+КЛАСС B
+КОНЕЦ КЛАСС
+
+КЛАСС C
+КОНЕЦ КЛАСС
+
+РАЗМЕЩЕНИЕ
+  ПРИВЯЗАТЬ A ЛЕВЕЕ B
+  ПРИВЯЗАТЬ C ВЫШЕ A
+КОНЕЦ РАЗМЕЩЕНИЕ
+"""
+
+
+def test_bind_commands_are_translated_to_dot():
+    diagram = build_diagram(parse_tdl(lex(BIND_TDL_SOURCE)))
+
+    dot, node_map = diagram_to_dot(diagram)
+    name_to_node = {
+        class_name: node_id
+        for node_id, class_name in node_map.items()
+    }
+
+    node_a = name_to_node["A"]
+    node_b = name_to_node["B"]
+    node_c = name_to_node["C"]
+
+    assert "rankdir=TB" in dot
+
+    # A находится левее B.
+    assert f"{node_a}; {node_b};" in dot
+    assert f"{node_a} -> {node_b}" in dot
+
+    # C находится выше A.
+    assert f"{node_c} -> {node_a}" in dot
+
+    assert dot.count('class="layout-edge"') == 2
