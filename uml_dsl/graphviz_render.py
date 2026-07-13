@@ -8,6 +8,7 @@ import subprocess
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from typing import Dict, List, Tuple
+import json
 
 from .diagram import ClassDiagram
 from .enums import AggregationKind
@@ -205,6 +206,13 @@ def enrich_svg_with_data_attrs(
             g.set("data-abstract", str(uml_cls.is_abstract).lower())
             g.set("data-attributes-count", str(len(uml_cls.attributes)))
             g.set("data-operations-count", str(len(uml_cls.operations)))
+            g.set("data-model",
+                json.dumps(
+                    uml_cls.model_dump(mode="json"),
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ),
+            )
 
         elif "edge" in cls_attr:
             title_el = next((c for c in list(g) if c.tag.endswith("title")), None)

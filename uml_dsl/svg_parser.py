@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 from typing import Dict, List, Optional, Tuple, Any
 
 from pydantic import BaseModel, Field
+import json
 
 from .models import (
     Class, Attribute, Operation, Parameter,
@@ -82,21 +83,37 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
         if not class_id:
             errors.append(f"Класс без атрибута data-id (элемент {elem.tag})")
             continue
-            
-        # Извлекаем данные из атрибутов
-        name = elem.get('data-name', class_id)
-        stereo = elem.get('data-stereotype')
-        is_abstract = elem.get('data-abstract') == 'true'
-        attr_count = int(elem.get('data-attributes-count', '0'))
-        op_count = int(elem.get('data-operations-count', '0'))
-        
-        # Создаём класс (пока без атрибутов и операций — их нет в SVG)
-        # В реальном парсере нужно будет восстанавливать и их из текста
-        cls = Class(
-            name=name,
-            stereotype=Stereotype(stereo) if stereo else None,
-            is_abstract=is_abstract,
-        )
+
+        model_json = elem.get("data-model")
+
+        if model_json:
+            try:
+                model_data = json.loads(model_json)
+                cls = Class.model_validate(model_data)
+            except (json.JSONDecodeError, ValueError, TypeError) as exc:
+                errors.append(
+                    f"Класс '{class_id}': некорректный data-model: {exc}"
+                )
+                continue
+        else:
+            # Совместимость со старыми SVG, где полной модели ещё не было.
+            name = elem.get("data-name", class_id)
+            stereo = elem.get("data-stereotype")
+            is_abstract = elem.get("data-abstract") == "true"
+
+            cls = Class(
+                name=name,
+                stereotype=Stereotype(stereo) if stereo else None,
+                is_abstract=is_abstract,
+            )
+
+            warnings.append(
+                f"Класс '{name}' не содержит data-model; "
+                "атрибуты и операции восстановить невозможно"
+            )
+
+        name = cls.name
+
         
         diagram.add_classifier(cls)
         
