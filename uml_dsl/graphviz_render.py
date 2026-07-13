@@ -12,6 +12,11 @@ import json
 
 from .diagram import ClassDiagram
 from .enums import AggregationKind
+from .svg_metadata import (
+    CURRENT_TDL_SCHEMA_VERSION,
+    TDL_LAYOUT_ATTR,
+    TDL_SCHEMA_ATTR,
+)
 
 
 def _q(value: str) -> str:
@@ -308,9 +313,13 @@ def enrich_svg_with_data_attrs(
 ) -> str:
     """Add data-* attributes to Graphviz-generated SVG."""
     root = ET.fromstring(svg_text)
-    root.set("data-tdl-schema", "1")
     root.set(
-        "data-layout",
+        TDL_SCHEMA_ATTR,
+        str(CURRENT_TDL_SCHEMA_VERSION),
+    )
+
+    root.set(
+        TDL_LAYOUT_ATTR,
         json.dumps(
             diagram.layout_commands,
             ensure_ascii=False,

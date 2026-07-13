@@ -6,7 +6,11 @@ from uml_dsl.tdl_parser import parse_tdl
 from uml_dsl.tdl_serializer import diagram_to_tdl
 from pathlib import Path
 import xml.etree.ElementTree as ET
-
+from uml_dsl.svg_metadata import (
+    CURRENT_TDL_SCHEMA_VERSION,
+    TDL_LAYOUT_ATTR,
+    TDL_SCHEMA_ATTR,
+)
 
 TDL_SOURCE = """
 КЛАСС Робот
@@ -282,5 +286,131 @@ def test_invalid_svg_layout_metadata_is_rejected():
     assert result.diagram is not None
     assert any(
         "data-layout" in str(error)
+        for error in result.errors
+    ), result.errors
+
+def test_generated_svg_contains_metadata_schema_version():
+    source = """
+КЛАСС Пример
+КОНЕЦ КЛАСС
+"""
+
+    diagram = build_diagram(parse_tdl(lex(source)))
+    svg = diagram_to_graphviz_svg(diagram)
+
+    root = ET.fromstring(svg)
+
+    assert root.get(TDL_SCHEMA_ATTR) == str(
+        CURRENT_TDL_SCHEMA_VERSION
+    )
+    assert root.get(TDL_LAYOUT_ATTR) == "[]"
+
+def test_legacy_svg_without_layout_is_supported():
+    source = """
+КЛАСС Пример
+КОНЕЦ КЛАСС
+"""
+
+    diagram = build_diagram(parse_tdl(lex(source)))
+    svg = diagram_to_graphviz_svg(diagram)
+
+    root = ET.fromstring(svg)
+
+    # Имитируем SVG, созданный старой версией программы.
+    root.attrib.pop(TDL_SCHEMA_ATTR, None)
+    root.attrib.pop(TDL_LAYOUT_ATTR, None)
+
+    legacy_svg = ET.tostring(
+        root,
+        encoding="unicode",
+    )
+
+    result = parse_svg_to_diagram(legacy_svg)
+
+    assert result.success, result.errors
+    assert result.diagram is not None
+    assert "Пример" in result.diagram.classifiers
+    assert result.diagram.layout_commands == []
+
+    assert any(
+        "режим совместимости" in warning
+        for warning in result.warnings
+    )
+
+def test_current_schema_svg_without_layout_is_supported():
+    source = """
+КЛАСС Пример
+КОНЕЦ КЛАСС
+"""
+
+    diagram = build_diagram(parse_tdl(lex(source)))
+    svg = diagram_to_graphviz_svg(diagram)
+
+    root = ET.fromstring(svg)
+    root.attrib.pop(TDL_LAYOUT_ATTR, None)
+
+    svg_without_layout = ET.tostring(
+        root,
+        encoding="unicode",
+    )
+
+    result = parse_svg_to_diagram(svg_without_layout)
+
+    assert result.success, result.errors
+    assert result.diagram is not None
+    assert result.diagram.layout_commands == []
+
+    assert any(
+        "не содержит data-layout" in warning
+        for warning in result.warnings
+    )
+
+def test_unsupported_svg_metadata_version_is_rejected():
+    source = """
+КЛАСС Пример
+КОНЕЦ КЛАСС
+"""
+
+    diagram = build_diagram(parse_tdl(lex(source)))
+    svg = diagram_to_graphviz_svg(diagram)
+
+    root = ET.fromstring(svg)
+    root.set(TDL_SCHEMA_ATTR, "999")
+
+    unsupported_svg = ET.tostring(
+        root,
+        encoding="unicode",
+    )
+
+    result = parse_svg_to_diagram(unsupported_svg)
+
+    assert not result.success
+    assert any(
+        "Неподдерживаемая версия" in error
+        for error in result.errors
+    ), result.errors
+
+def test_invalid_svg_metadata_version_is_rejected():
+    source = """
+КЛАСС Пример
+КОНЕЦ КЛАСС
+"""
+
+    diagram = build_diagram(parse_tdl(lex(source)))
+    svg = diagram_to_graphviz_svg(diagram)
+
+    root = ET.fromstring(svg)
+    root.set(TDL_SCHEMA_ATTR, "первая")
+
+    invalid_svg = ET.tostring(
+        root,
+        encoding="unicode",
+    )
+
+    result = parse_svg_to_diagram(invalid_svg)
+
+    assert not result.success
+    assert any(
+        "Некорректная версия" in error
         for error in result.errors
     ), result.errors

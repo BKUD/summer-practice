@@ -20,6 +20,13 @@ from .relationships import (
 )
 from .diagram import ClassDiagram, ClassPosition
 
+from .svg_metadata import (
+    CURRENT_TDL_SCHEMA_VERSION,
+    LEGACY_TDL_SCHEMA_VERSION,
+    SUPPORTED_TDL_SCHEMA_VERSIONS,
+    TDL_LAYOUT_ATTR,
+    TDL_SCHEMA_ATTR,
+)
 
 class ParseResult(BaseModel):
     """Результат парсинга SVG в Pydantic-модель."""
@@ -41,6 +48,38 @@ def parse_transform(transform_str: str) -> Tuple[float, float]:
     return (0.0, 0.0)
 
 
+def _parse_tdl_schema_version(
+    root: ET.Element,
+    errors: list[str],
+    warnings: list[str],
+) -> int:
+    raw_version = root.get(TDL_SCHEMA_ATTR)
+
+    if raw_version is None:
+        warnings.append(
+            "SVG не содержит data-tdl-schema; "
+            "используется режим совместимости со старым SVG."
+        )
+        return LEGACY_TDL_SCHEMA_VERSION
+
+    try:
+        version = int(raw_version)
+    except (TypeError, ValueError):
+        errors.append(
+            "Некорректная версия SVG-метаданных "
+            f"{TDL_SCHEMA_ATTR}={raw_version!r}."
+        )
+        return LEGACY_TDL_SCHEMA_VERSION
+
+    if version not in SUPPORTED_TDL_SCHEMA_VERSIONS:
+        errors.append(
+            "Неподдерживаемая версия SVG-метаданных: "
+            f"{version}. Текущая версия: "
+            f"{CURRENT_TDL_SCHEMA_VERSION}."
+        )
+
+    return version
+
 def parse_svg_to_diagram(svg_content: str) -> ParseResult:
     """
     Парсит SVG с data-атрибутами и восстанавливает ClassDiagram.
@@ -58,26 +97,43 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
     
     try:
         root = ET.fromstring(svg_content)
-    except ET.ParseError as e:
+        schema_version = _parse_tdl_schema_version(
+            root,
+            errors,
+            warnings,
+        )
+    except ET.ParseError as exc:
         return ParseResult(
             success=False,
-            errors=[f"Ошибка парсинга XML: {e}"]
+            diagram=None,
+            errors=[
+                f"Ошибка парсинга XML: {exc}"
+            ],
+            warnings=[],
         )
     
     # Проверка наличия классов
     class_elements = root.findall('.//*[@data-type="class"]')
+
     if not class_elements:
+        errors.append(
+            "Диаграмма не содержит размеченных классов. "
+            "Убедитесь, что SVG сгенерирован TDL."
+        )
+
         return ParseResult(
             success=False,
-            errors=["Диаграмма не содержит размеченных классов. Убедитесь, что SVG сгенерирован TDL."]
+            diagram=None,
+            errors=errors,
+            warnings=warnings,
         )
     
     # Создаём пустую диаграмму
     diagram = ClassDiagram(title="Imported from SVG")
 
-    layout_json = root.get("data-layout")
+    layout_json = root.get(TDL_LAYOUT_ATTR)
 
-    if layout_json:
+    if layout_json is not None:
         try:
             layout_commands = json.loads(layout_json)
 
@@ -91,15 +147,22 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
                     for command in layout_commands
             ):
                 raise ValueError(
-                    "Каждая команда data-layout должна быть объектом"
+                    "Каждая команда data-layout "
+                    "должна быть JSON-объектом"
                 )
 
             diagram.layout_commands = layout_commands
 
         except (json.JSONDecodeError, ValueError, TypeError) as exc:
             errors.append(
-                f"Некорректные данные размещения data-layout: {exc}"
+                f"Некорректные данные размещения "
+                f"{TDL_LAYOUT_ATTR}: {exc}"
             )
+    elif schema_version >= CURRENT_TDL_SCHEMA_VERSION:
+        warnings.append(
+            "SVG использует текущую схему метаданных, "
+            "но не содержит data-layout."
+        )
     
     # 1. Сначала парсим все классы (они нужны для ссылок в отношениях)
     class_positions = {}
