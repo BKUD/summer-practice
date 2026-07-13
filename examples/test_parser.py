@@ -122,8 +122,16 @@ def test_roundtrip():
         svg_content = f.read()
     
     # Парсим
-    diagram = parse_svg_to_diagram(svg_content)
-    
+    parse_result = parse_svg_to_diagram(svg_content)
+
+    assert parse_result.success, (
+            "SVG не удалось распарсить:\n"
+            + "\n".join(parse_result.errors)
+    )
+    assert parse_result.diagram is not None, "Парсер не вернул диаграмму"
+
+    diagram = parse_result.diagram
+
     # Генерируем новый SVG из распарсенной модели
     new_svg = diagram.to_svg(interactive=True)
     
