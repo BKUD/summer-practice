@@ -134,29 +134,54 @@ def build_diagram(doc: Document, title: str = "Диаграмма TDL") -> Class
     # 3) Размещение
     if doc.layout and doc.layout.commands:
         for cmd in doc.layout.commands:
-            if isinstance(cmd, FixCmd):
+            if isinstance(cmd, AlignCmd):
+                diagram.layout_commands.append(
+                    {
+                        "kind": "align",
+                        "where": cmd.where,
+                        "elements": list(cmd.elements),
+                    }
+                )
+
+            elif isinstance(cmd, DistributeCmd):
+                diagram.layout_commands.append(
+                    {
+                        "kind": "distribute",
+                        "axis": cmd.axis,
+                        "elements": list(cmd.elements),
+                        "step": cmd.step,
+                    }
+                )
+
+            elif isinstance(cmd, BindCmd):
+                diagram.layout_commands.append(
+                    {
+                        "kind": "bind",
+                        "elem1": cmd.elem1,
+                        "direction": cmd.direction,
+                        "elem2": cmd.elem2,
+                    }
+                )
+
+            elif isinstance(cmd, FixCmd):
+                diagram.layout_commands.append(
+                    {
+                        "kind": "fix",
+                        "element": cmd.element,
+                        "x": cmd.x,
+                        "y": cmd.y,
+                    }
+                )
+
                 cls = diagram.classifiers.get(cmd.element)
                 if cls:
-                    w, h = cls.get_box_size()
+                    width, height = cls.get_box_size()
                     diagram.positions[cmd.element] = ClassPosition(
-                        classifier_name=cmd.element, x=cmd.x, y=cmd.y, width=w, height=h
+                        classifier_name=cmd.element,
+                        x=cmd.x,
+                        y=cmd.y,
+                        width=width,
+                        height=height,
                     )
-        placed = set(diagram.positions.keys())
-        unplaced = [n for n in diagram.classifiers if n not in placed]
-        if unplaced:
-            for idx, name in enumerate(unplaced):
-                cls = diagram.classifiers[name]
-                w, h = cls.get_box_size()
-                row = idx // 3
-                col = idx % 3
-                diagram.positions[name] = ClassPosition(
-                    classifier_name=name,
-                    x=40 + col * 380,
-                    y=40 + row * 280,
-                    width=w,
-                    height=h,
-                )
-    else:
-        diagram.auto_layout(cols=3, spacing_x=380, spacing_y=280, start_x=40, start_y=40)
 
     return diagram

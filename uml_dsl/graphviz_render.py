@@ -39,15 +39,70 @@ def _node_label(cls) -> str:
     ) or " "
     return f"<{title}<BR/>{attrs}<BR/>{ops}>"
 
+def _has_horizontal_distribution(diagram: ClassDiagram) -> bool:
+    return any(
+        command.get("kind") == "distribute"
+        and command.get("axis") == "ГОРИЗОНТАЛИ"
+        for command in diagram.layout_commands
+    )
+
+
+def _layout_to_dot(
+    diagram: ClassDiagram,
+    name_to_node: Dict[str, str],
+) -> List[str]:
+    """Преобразует команды размещения TDL в ограничения DOT."""
+
+    lines: List[str] = []
+
+    for command_index, command in enumerate(diagram.layout_commands):
+        if command.get("kind") != "distribute":
+            continue
+
+        if command.get("axis") != "ГОРИЗОНТАЛИ":
+            continue
+
+        node_ids = [
+            name_to_node[name]
+            for name in command.get("elements", [])
+            if name in name_to_node
+        ]
+
+        if len(node_ids) < 2:
+            continue
+
+        # Все перечисленные узлы должны находиться в одной строке.
+        lines.append(f"  subgraph layout_horizontal_{command_index} {{")
+        lines.append("    rank=same;")
+        lines.append("    " + "; ".join(node_ids) + ";")
+        lines.append("  }")
+
+        # Невидимые рёбра фиксируют порядок слева направо.
+        for edge_index, (left, right) in enumerate(
+            zip(node_ids, node_ids[1:])
+        ):
+            lines.append(
+                f"  {left} -> {right} "
+                "[style=invis, weight=100, constraint=true, "
+                f'id="layout-edge-{command_index}-{edge_index}", '
+                'class="layout-edge"];'
+            )
+
+    return lines
 
 def diagram_to_dot(diagram: ClassDiagram) -> Tuple[str, Dict[str, str]]:
     """Render diagram to DOT and return node-id -> class-name map."""
     node_map: Dict[str, str] = {}
     name_to_node: Dict[str, str] = {}
 
+    rankdir = "TB" if _has_horizontal_distribution(diagram) else "LR"
+
     lines: List[str] = [
         "digraph UML {",
-        "  graph [rankdir=LR, splines=ortho, nodesep=0.8, ranksep=1.0, pad=0.3];",
+        (
+            f"  graph [rankdir={rankdir}, splines=ortho, "
+            "nodesep=0.8, ranksep=1.0, pad=0.3];"
+        ),
         "  node [shape=box, fontsize=10, fontname=\"Arial\"];",
         "  edge [fontsize=9, fontname=\"Arial\"];",
     ]
@@ -58,6 +113,8 @@ def diagram_to_dot(diagram: ClassDiagram) -> Tuple[str, Dict[str, str]]:
         name_to_node[name] = node_id
         label = _node_label(cls)
         lines.append(f"  {node_id} [label={_q(label)} shape=plaintext];")
+
+    lines.extend(_layout_to_dot(diagram, name_to_node))
 
     for assoc in diagram.associations:
         if not assoc.is_binary():
@@ -240,6 +297,12 @@ def enrich_svg_with_data_attrs(
             )
 
         elif "edge" in cls_attr:
+            if (
+                    "layout-edge" in cls_attr
+                    or (g.get("id") or "").startswith("layout-edge-")
+            ):
+                continue
+
             title_el = next((c for c in list(g) if c.tag.endswith("title")), None)
             if title_el is None or not title_el.text or "->" not in title_el.text:
                 continue
