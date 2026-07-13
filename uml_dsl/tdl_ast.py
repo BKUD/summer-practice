@@ -59,6 +59,7 @@ class AssocEnd:
     participant: str
     multiplicity: Optional[str] = None
     role: Optional[str] = None
+    aggregation: Optional[str] = None
 
 
 @dataclass

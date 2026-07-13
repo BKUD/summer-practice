@@ -39,6 +39,11 @@ def _format_association_end(end: AssociationEnd) -> str:
     if end.role:
         result += f" : {end.role}"
 
+    if end.aggregation == AggregationKind.AGGREGATION:
+        result += " АГРЕГАЦИЯ"
+    elif end.aggregation == AggregationKind.COMPOSITION:
+        result += " КОМПОЗИЦИЯ"
+
     return result
 
 
@@ -159,14 +164,6 @@ def diagram_to_tdl(diagram: ClassDiagram) -> str:
                 "только бинарные ассоциации"
             )
 
-        if any(
-            end.aggregation != AggregationKind.NONE
-            for end in association.ends
-        ):
-            raise ValueError(
-                "Текущая грамматика TDL ещё не умеет описывать "
-                "агрегацию и композицию"
-            )
 
         lines.append("")
         lines.append("АССОЦИАЦИЯ")

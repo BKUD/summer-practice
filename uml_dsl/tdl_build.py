@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Optional
 
 from .diagram import ClassDiagram, ClassPosition
-from .enums import Changeability, DependencyStereotype, Visibility
+from .enums import Changeability, DependencyStereotype, Visibility, AggregationKind
 from .models import Attribute, Class, MultiplicityRange, Operation, Parameter
 from .relationships import Association, AssociationEnd, Dependency, Generalization, Realization
 from .tdl_ast import (
@@ -146,8 +146,21 @@ def build_diagram(doc: Document, title: str = "Диаграмма TDL") -> Class
                 raise ValueError(f"Участник ассоциации не найден: {decl.end1.participant} или {decl.end2.participant}")
             mult1 = _parse_multiplicity(decl.end1.multiplicity)
             mult2 = _parse_multiplicity(decl.end2.multiplicity)
-            e1 = AssociationEnd(participant=c1, multiplicity=mult1, role=decl.end1.role, navigable=True)
-            e2 = AssociationEnd(participant=c2, multiplicity=mult2, role=decl.end2.role, navigable=False)
+            e1 = AssociationEnd(
+                participant=c1,
+                multiplicity=mult1,
+                role=decl.end1.role,
+                navigable=True,
+                aggregation=_aggregation(decl.end1.aggregation),
+            )
+
+            e2 = AssociationEnd(
+                participant=c2,
+                multiplicity=mult2,
+                role=decl.end2.role,
+                navigable=False,
+                aggregation=_aggregation(decl.end2.aggregation),
+            )
             diagram.add_association(Association(ends=[e1, e2], name=decl.name, is_derived=decl.is_derived))
 
     # 3) Размещение
@@ -204,3 +217,12 @@ def build_diagram(doc: Document, title: str = "Диаграмма TDL") -> Class
                     )
 
     return diagram
+
+def _aggregation(value: Optional[str]) -> AggregationKind:
+    if value == "aggregation":
+        return AggregationKind.AGGREGATION
+
+    if value == "composition":
+        return AggregationKind.COMPOSITION
+
+    return AggregationKind.NONE
