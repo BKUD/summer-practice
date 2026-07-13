@@ -4,7 +4,7 @@ from uml_dsl.tdl_build import build_diagram
 from uml_dsl.tdl_lexer import lex
 from uml_dsl.tdl_parser import parse_tdl
 from uml_dsl.tdl_serializer import diagram_to_tdl
-
+from pathlib import Path
 
 TDL_SOURCE = """
 КЛАСС Робот
@@ -138,3 +138,91 @@ def test_missing_multiplicity_is_not_converted_to_many():
     svg = diagram_to_graphviz_svg(diagram)
 
     assert "[0..*]" not in svg
+
+def _association_signature(association):
+    return (
+        association.name,
+        association.is_derived,
+        tuple(
+            (
+                end.participant.name,
+                end.role,
+                (
+                    str(end.multiplicity)
+                    if end.multiplicity is not None
+                    else None
+                ),
+                end.aggregation.value,
+                end.navigable,
+            )
+            for end in association.ends
+        ),
+    )
+
+
+def test_robot_biologist_full_roundtrip(tmp_path):
+    project_root = Path(__file__).resolve().parents[1]
+    source_path = (
+        project_root
+        / "examples"
+        / "robot_biologist.tdl"
+    )
+
+    source_tdl = source_path.read_text(encoding="utf-8")
+
+    # TDL → Pydantic
+    original = build_diagram(
+        parse_tdl(lex(source_tdl))
+    )
+
+    # Pydantic → Graphviz SVG
+    svg = diagram_to_graphviz_svg(original)
+    (tmp_path / "robot_biologist.svg").write_text(
+        svg,
+        encoding="utf-8",
+    )
+
+    # SVG → Pydantic
+    parse_result = parse_svg_to_diagram(svg)
+
+    assert parse_result.success, parse_result.errors
+    assert parse_result.diagram is not None
+    assert not parse_result.errors
+
+    restored_from_svg = parse_result.diagram
+
+    # Pydantic → TDL
+    restored_tdl = diagram_to_tdl(restored_from_svg)
+    (tmp_path / "robot_biologist_restored.tdl").write_text(
+        restored_tdl,
+        encoding="utf-8",
+    )
+
+    # Восстановленный TDL → Pydantic
+    rebuilt = build_diagram(
+        parse_tdl(lex(restored_tdl))
+    )
+
+    # Проверяем классы.
+    assert set(rebuilt.classifiers) == set(original.classifiers)
+
+    for class_name in original.classifiers:
+        original_class = original.classifiers[class_name]
+        rebuilt_class = rebuilt.classifiers[class_name]
+
+        assert (
+            rebuilt_class.model_dump(mode="json")
+            == original_class.model_dump(mode="json")
+        )
+
+    # Проверяем ассоциации, включая кратности и композицию.
+    original_associations = sorted(
+        _association_signature(association)
+        for association in original.associations
+    )
+    rebuilt_associations = sorted(
+        _association_signature(association)
+        for association in rebuilt.associations
+    )
+
+    assert rebuilt_associations == original_associations
