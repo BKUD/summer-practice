@@ -3,6 +3,7 @@ from uml_dsl.svg_parser import parse_svg_to_diagram
 from uml_dsl.tdl_build import build_diagram
 from uml_dsl.tdl_lexer import lex
 from uml_dsl.tdl_parser import parse_tdl
+from uml_dsl.tdl_serializer import diagram_to_tdl
 
 
 TDL_SOURCE = """
@@ -41,6 +42,17 @@ def test_graphviz_roundtrip_preserves_class_members():
 
     assert restored_class.operations[0].name == "двигаться"
     assert restored_class.operations[0].return_type == "int"
+
+    restored_tdl = diagram_to_tdl(restored)
+    rebuilt = build_diagram(parse_tdl(lex(restored_tdl)))
+
+    rebuilt_class = rebuilt.classifiers["Робот"]
+
+    assert len(rebuilt_class.attributes) == 2
+    assert len(rebuilt_class.operations) == 1
+    assert rebuilt_class.attributes[0].name == "имя"
+    assert rebuilt_class.attributes[0].type_ == "String"
+    assert rebuilt_class.operations[0].name == "двигаться"
 
 RELATION_TDL = """
 КЛАСС Контейнер
@@ -100,3 +112,12 @@ def test_graphviz_roundtrip_preserves_association():
             restored_end.multiplicity.upper
             == original_end.multiplicity.upper
         )
+    restored_tdl = diagram_to_tdl(restored)
+    rebuilt = build_diagram(parse_tdl(lex(restored_tdl)))
+
+    assert len(rebuilt.associations) == 1
+    rebuilt_assoc = rebuilt.associations[0]
+
+    assert rebuilt_assoc.name == "содержит"
+    assert rebuilt_assoc.ends[0].role == "контейнер"
+    assert rebuilt_assoc.ends[1].role == "элементы"
