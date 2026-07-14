@@ -41,3 +41,8 @@ Thumbs.db
 output/*.png
 output/*.jpg
 *.log
+
+.venv-clean/
+output-clean/
+.pytest_cache/
+__pycache__/
