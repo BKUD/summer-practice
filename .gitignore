@@ -42,7 +42,7 @@ Thumbs.db
 output/*.png
 output/*.jpg
 *.log
--o
+
 .venv-clean/
 output-clean/
 .pytest_cache/
