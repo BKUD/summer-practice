@@ -18,6 +18,12 @@ from .svg_metadata import (
     TDL_SCHEMA_ATTR,
 )
 
+SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+XLINK_NAMESPACE = "http://www.w3.org/1999/xlink"
+
+ET.register_namespace("", SVG_NAMESPACE)
+ET.register_namespace("xlink", XLINK_NAMESPACE)
+
 
 def _q(value: str) -> str:
     """Quote value for DOT ids/strings."""

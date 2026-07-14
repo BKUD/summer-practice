@@ -7,79 +7,110 @@ TDL → SVG: чтение файла .tdl, разбор, сборка модел
 """
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
+from typing import Sequence
 
-# Корень проекта
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from uml_dsl.tdl_lexer import lex, LexerError
-from uml_dsl.tdl_parser import parse_tdl, ParseError
-from uml_dsl.tdl_build import build_diagram
-from uml_dsl.graphviz_render import diagram_to_graphviz_svg
+from .graphviz_render import diagram_to_graphviz_svg
+from .tdl_build import build_diagram
+from .tdl_lexer import lex
+from .tdl_parser import parse_tdl
 
 
-def tdl_to_svg(tdl_text: str, width: int = 900, height: int = 500) -> str:
-    tokens = lex(tdl_text)
-    doc = parse_tdl(tokens)
-    diagram = build_diagram(doc)
-    diagram.validate_all()
+def tdl_to_svg(tdl_source: str) -> str:
+    """
+    Преобразовать текст TDL в SVG.
+
+    Используется Streamlit-приложением и может вызываться
+    программно без работы с файлами.
+    """
+    tokens = lex(tdl_source)
+    ast = parse_tdl(tokens)
+    diagram = build_diagram(ast)
+
     return diagram_to_graphviz_svg(diagram)
 
 
-def main() -> int:
-    if len(sys.argv) < 2:
-        print("Использование: python -m uml_dsl.tdl_run <файл.tdl> [выход.svg|выход.png]", file=sys.stderr)
-        return 1
-    tdl_path = Path(sys.argv[1])
-    if not tdl_path.is_absolute():
-        tdl_path = (Path.cwd() / tdl_path).resolve()
-    if not tdl_path.exists():
-        print(f"Файл не найден: {tdl_path}", file=sys.stderr)
-        return 1
-    out_path = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else tdl_path.with_suffix(".svg")
+def render_tdl_file(
+    input_path: Path,
+    output_path: Path,
+) -> Path:
+    """Преобразовать TDL-файл в SVG и сохранить результат."""
+
+    if not input_path.is_file():
+        raise FileNotFoundError(
+            f"Входной TDL-файл не найден: {input_path}"
+        )
+
+    source = input_path.read_text(encoding="utf-8")
+
+    # Используем ту же функцию, что и Streamlit.
+    svg = tdl_to_svg(source)
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    output_path.write_text(
+        svg,
+        encoding="utf-8",
+    )
+
+    return output_path
+
+
+def build_argument_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Преобразование диаграммы TDL "
+            "в SVG через Graphviz."
+        )
+    )
+
+    parser.add_argument(
+        "input",
+        type=Path,
+        help="Путь к исходному .tdl-файлу.",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        required=True,
+        help="Путь для сохранения итогового .svg-файла.",
+    )
+
+    return parser
+
+
+def main(
+    argv: Sequence[str] | None = None,
+) -> int:
+    parser = build_argument_parser()
+    args = parser.parse_args(argv)
 
     try:
-        text = tdl_path.read_text(encoding="utf-8")
-    except Exception as e:
-        print(f"Ошибка чтения: {e}", file=sys.stderr)
+        output_path = render_tdl_file(
+            input_path=args.input,
+            output_path=args.output,
+        )
+    except Exception as exc:
+        print(
+            f"Ошибка генерации SVG: {exc}",
+            file=sys.stderr,
+        )
         return 1
 
-    try:
-        svg = tdl_to_svg(text)
-    except LexerError as e:
-        print(f"Ошибка лексера: {e}", file=sys.stderr)
-        return 1
-    except ParseError as e:
-        print(f"Ошибка парсера: {e}", file=sys.stderr)
-        return 1
-    except ValueError as e:
-        print(f"Ошибка модели: {e}", file=sys.stderr)
-        return 1
+    resolved_path = output_path.resolve()
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    suf = out_path.suffix.lower()
-    if suf == ".png":
-        try:
-            from uml_dsl.export import svg_to_png
-            svg_to_png(svg, output=out_path)
-        except ImportError as e:
-            print(f"Для PNG нужен cairosvg: pip install cairosvg. {e}", file=sys.stderr)
-            return 1
-    elif suf == ".jpg" or suf == ".jpeg":
-        try:
-            from uml_dsl.export import svg_to_jpg
-            svg_to_jpg(svg, output=out_path)
-        except ImportError as e:
-            print(f"Для JPG нужны cairosvg и Pillow: pip install cairosvg Pillow. {e}", file=sys.stderr)
-            return 1
-    else:
-        out_path.write_text(svg, encoding="utf-8")
-    print(f"Сохранено: {out_path}")
+    print(f"SVG сохранён: {resolved_path}")
+    print(f"Размер: {resolved_path.stat().st_size} байт")
+
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

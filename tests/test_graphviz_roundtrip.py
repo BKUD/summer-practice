@@ -12,6 +12,12 @@ from uml_dsl.svg_metadata import (
     TDL_SCHEMA_ATTR,
 )
 
+SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+XLINK_NAMESPACE = "http://www.w3.org/1999/xlink"
+
+ET.register_namespace("", SVG_NAMESPACE)
+ET.register_namespace("xlink", XLINK_NAMESPACE)
+
 TDL_SOURCE = """
 КЛАСС Робот
   АТРИБУТЫ

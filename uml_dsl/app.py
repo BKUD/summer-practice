@@ -3,6 +3,9 @@ Streamlit-приложение: валидация UML-диаграмм (SVG) и
 """
 import sys
 from pathlib import Path
+import base64
+
+
 
 # Корень проекта (родитель папки uml_dsl)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -18,6 +21,39 @@ from uml_dsl.tdl_run import tdl_to_svg
 from uml_dsl.tdl_lexer import lex, LexerError
 from uml_dsl.tdl_parser import parse_tdl, ParseError
 from uml_dsl.tdl_build import build_diagram
+
+def render_svg_preview(svg_content: str) -> None:
+    """Показать SVG как изолированное изображение."""
+
+    encoded_svg = base64.b64encode(
+        svg_content.encode("utf-8")
+    ).decode("ascii")
+
+    st.markdown(
+        f"""
+        <div style="
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 12px;
+            box-sizing: border-box;
+            background: white;
+        ">
+            <img
+                src="data:image/svg+xml;base64,{encoded_svg}"
+                alt="Предпросмотр UML-диаграммы"
+                style="
+                    display: block;
+                    width: auto;
+                    min-width: 100%;
+                    height: auto;
+                    max-width: none;
+                "
+            />
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 st.set_page_config(
@@ -65,7 +101,8 @@ with tab_tdl:
                     svg_tdl = tdl_to_svg(tdl_content.strip())
                     st.session_state["current_svg"] = svg_tdl
                     st.success("Диаграмма построена")
-                    st.components.v1.html(svg_tdl, height=400)
+                    with st.expander("📊 Превью SVG", expanded=True):
+                        render_svg_preview(svg_tdl)
                     st.download_button(
                         "Скачать SVG",
                         data=svg_tdl,
@@ -139,8 +176,8 @@ with tab_val:
                     else:
                         svg_content = uploaded_file.decode('utf-8') if isinstance(uploaded_file, bytes) else uploaded_file
                     st.session_state["current_svg"] = svg_content
-                    with st.expander("📊 Превью SVG", expanded=False):
-                        st.components.v1.html(svg_content, height=300)
+                    with st.expander("📊 Превью SVG", expanded=True):
+                        render_svg_preview(svg_content)
                     with st.spinner("Парсинг и валидация..."):
                         try:
                             # Первый уровень: парсинг SVG
