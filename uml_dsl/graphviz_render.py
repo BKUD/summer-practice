@@ -8,9 +8,21 @@ import subprocess
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from typing import Dict, List, Tuple
+import json
 
 from .diagram import ClassDiagram
 from .enums import AggregationKind
+from .svg_metadata import (
+    CURRENT_TDL_SCHEMA_VERSION,
+    TDL_LAYOUT_ATTR,
+    TDL_SCHEMA_ATTR,
+)
+
+SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+XLINK_NAMESPACE = "http://www.w3.org/1999/xlink"
+
+ET.register_namespace("", SVG_NAMESPACE)
+ET.register_namespace("xlink", XLINK_NAMESPACE)
 
 
 def _q(value: str) -> str:
@@ -19,35 +31,177 @@ def _q(value: str) -> str:
 
 
 def _node_label(cls) -> str:
-    """Build Graphviz record label for UML class."""
-    title = cls.name
+    """Создаёт HTML-подобную UML-метку для Graphviz."""
+
+    class_name = html.escape(cls.name)
+
     if getattr(cls, "is_abstract", False):
-        title = f"<I>{html.escape(title)}</I>"
-    else:
-        title = html.escape(title)
+        class_name = f"<I>{class_name}</I>"
+
+    class_name = f"<B>{class_name}</B>"
 
     if getattr(cls, "stereotype", None):
-        st = html.escape(cls.stereotype.value)
-        title = f"&laquo;{st}&raquo;<BR/>{title}"
+        stereotype = html.escape(cls.stereotype.value)
+        title = f"&laquo;{stereotype}&raquo;<BR/>{class_name}"
+    else:
+        title = class_name
 
-    attrs = "<BR ALIGN=\"LEFT\"/>".join(
-        html.escape(a.to_text()) for a in getattr(cls, "attributes", [])
-    ) or " "
-    ops = "<BR ALIGN=\"LEFT\"/>".join(
-        html.escape(o.to_text()) for o in getattr(cls, "operations", [])
-    ) or " "
-    return f"<{title}<BR/>{attrs}<BR/>{ops}>"
+    attributes = "<BR ALIGN=\"LEFT\"/>".join(
+        html.escape(attribute.to_text())
+        for attribute in getattr(cls, "attributes", [])
+    )
 
+    operations = "<BR ALIGN=\"LEFT\"/>".join(
+        html.escape(operation.to_text())
+        for operation in getattr(cls, "operations", [])
+    )
+
+    if not attributes:
+        attributes = "&#160;"
+
+    if not operations:
+        operations = "&#160;"
+
+    return (
+        "<"
+        '<TABLE BORDER="1" CELLBORDER="0" '
+        'CELLSPACING="0" CELLPADDING="5">'
+        f"<TR><TD>{title}</TD></TR>"
+        "<HR/>"
+        f'<TR><TD ALIGN="LEFT">{attributes}</TD></TR>'
+        "<HR/>"
+        f'<TR><TD ALIGN="LEFT">{operations}</TD></TR>'
+        "</TABLE>"
+        ">"
+    )
+
+def _requires_tb_rankdir(diagram: ClassDiagram) -> bool:
+    return any(
+        (
+            command.get("kind") == "distribute"
+            and command.get("axis") == "ГОРИЗОНТАЛИ"
+        )
+        or command.get("kind") == "bind"
+        for command in diagram.layout_commands
+    )
+
+
+def _layout_to_dot(
+    diagram: ClassDiagram,
+    name_to_node: Dict[str, str],
+) -> List[str]:
+    """Преобразует команды размещения TDL в ограничения DOT."""
+
+    lines: List[str] = []
+
+    for command_index, command in enumerate(diagram.layout_commands):
+        if command.get("kind") != "distribute":
+            continue
+
+        if command.get("axis") != "ГОРИЗОНТАЛИ":
+            continue
+
+        node_ids = [
+            name_to_node[name]
+            for name in command.get("elements", [])
+            if name in name_to_node
+        ]
+
+        if len(node_ids) < 2:
+            continue
+
+        lines.append(f"  subgraph layout_horizontal_{command_index} {{")
+        lines.append("    rank=same;")
+        lines.append("    " + "; ".join(node_ids) + ";")
+        lines.append("  }")
+
+        for edge_index, (left, right) in enumerate(
+            zip(node_ids, node_ids[1:])
+        ):
+            lines.append(
+                f"  {left} -> {right} "
+                "[style=invis, weight=100, constraint=true, "
+                f'id="layout-edge-{command_index}-{edge_index}", '
+                'class="layout-edge"];'
+            )
+
+    for command_index, command in enumerate(diagram.layout_commands):
+        if command.get("kind") != "bind":
+            continue
+
+        elem1 = command.get("elem1")
+        elem2 = command.get("elem2")
+        direction = command.get("direction")
+
+        if elem1 not in name_to_node or elem2 not in name_to_node:
+            continue
+
+        node1 = name_to_node[elem1]
+        node2 = name_to_node[elem2]
+
+        if direction in ("ЛЕВЕЕ", "ПРАВЕЕ"):
+            left, right = (
+                (node1, node2)
+                if direction == "ЛЕВЕЕ"
+                else (node2, node1)
+            )
+
+            lines.append(f"  subgraph layout_bind_{command_index} {{")
+            lines.append("    rank=same;")
+            lines.append(f"    {left}; {right};")
+            lines.append("  }")
+
+            lines.append(
+                f"  {left} -> {right} "
+                "[style=invis, weight=200, constraint=true, "
+                f'id="layout-bind-{command_index}", '
+                'class="layout-edge"];'
+            )
+
+        elif direction in ("ВЫШЕ", "НИЖЕ"):
+            top, bottom = (
+                (node1, node2)
+                if direction == "ВЫШЕ"
+                else (node2, node1)
+            )
+
+            lines.append(
+                f"  {top} -> {bottom} "
+                "[style=invis, weight=200, constraint=true, minlen=1, "
+                f'id="layout-bind-{command_index}", '
+                'class="layout-edge"];'
+            )
+
+    return lines
+
+def _association_end_label(end) -> str:
+    """Формирует подпись полюса: роль и кратность."""
+
+    parts: List[str] = []
+
+    if end.role:
+        parts.append(end.role)
+
+    if end.multiplicity is not None:
+        parts.append(str(end.multiplicity))
+
+    return " ".join(parts)
 
 def diagram_to_dot(diagram: ClassDiagram) -> Tuple[str, Dict[str, str]]:
     """Render diagram to DOT and return node-id -> class-name map."""
     node_map: Dict[str, str] = {}
     name_to_node: Dict[str, str] = {}
 
+    rankdir = "TB" if _requires_tb_rankdir(diagram) else "LR"
+
     lines: List[str] = [
         "digraph UML {",
-        "  graph [rankdir=LR, splines=ortho, nodesep=0.8, ranksep=1.0, pad=0.3];",
-        "  node [shape=box, fontsize=10, fontname=\"Arial\"];",
+        (
+            f"  graph [rankdir={rankdir}, splines=polyline, "
+            "nodesep=1.0, ranksep=1.0, pad=0.3, "
+            "forcelabels=true, outputorder=edgesfirst];"
+        ),
+        '  node [shape=plain, fontsize=10, fontname="Arial"];',
         "  edge [fontsize=9, fontname=\"Arial\"];",
     ]
 
@@ -56,25 +210,56 @@ def diagram_to_dot(diagram: ClassDiagram) -> Tuple[str, Dict[str, str]]:
         node_map[node_id] = name
         name_to_node[name] = node_id
         label = _node_label(cls)
-        lines.append(f"  {node_id} [label={_q(label)} shape=plaintext];")
+        lines.append(
+            f"  {node_id} [shape=plain, label={label}];"
+        )
+
+    lines.extend(_layout_to_dot(diagram, name_to_node))
 
     for assoc in diagram.associations:
-        if not assoc.is_binary():
-            continue
-        src = assoc.ends[0].participant.name
-        tgt = assoc.ends[1].participant.name
+        src_end = assoc.ends[0]
+        tgt_end = assoc.ends[1]
+
+        src = src_end.participant.name
+        tgt = tgt_end.participant.name
+
         if src not in name_to_node or tgt not in name_to_node:
             continue
+
         src_id = name_to_node[src]
         tgt_id = name_to_node[tgt]
-        attrs = ["arrowhead=none", "color=black"]
+
+        attrs = [
+            "arrowhead=none",
+            "color=black",
+            "penwidth=1.0",
+            "fontsize=9",
+            'fontname="Arial"',
+            "labelfloat=true",
+            "labeldistance=2.0",
+            "labelangle=25",
+        ]
+
         if assoc.name:
             attrs.append(f"label={_q(assoc.name)}")
-        if assoc.ends[0].aggregation == AggregationKind.AGGREGATION:
-            attrs += ["dir=both", "arrowtail=odiamond"]
-        elif assoc.ends[0].aggregation == AggregationKind.COMPOSITION:
-            attrs += ["dir=both", "arrowtail=diamond"]
-        lines.append(f"  {src_id} -> {tgt_id} [{', '.join(attrs)}];")
+
+        src_label = _association_end_label(src_end)
+        tgt_label = _association_end_label(tgt_end)
+
+        if src_label:
+            attrs.append(f"taillabel={_q(src_label)}")
+
+        if tgt_label:
+            attrs.append(f"headlabel={_q(tgt_label)}")
+
+        if src_end.aggregation == AggregationKind.AGGREGATION:
+            attrs.extend(["dir=both", "arrowtail=odiamond"])
+        elif src_end.aggregation == AggregationKind.COMPOSITION:
+            attrs.extend(["dir=both", "arrowtail=diamond"])
+
+        lines.append(
+            f"  {src_id} -> {tgt_id} [{', '.join(attrs)}];"
+        )
 
     for gen in diagram.generalizations:
         src = gen.specific.name
@@ -134,23 +319,70 @@ def enrich_svg_with_data_attrs(
 ) -> str:
     """Add data-* attributes to Graphviz-generated SVG."""
     root = ET.fromstring(svg_text)
+    root.set(
+        TDL_SCHEMA_ATTR,
+        str(CURRENT_TDL_SCHEMA_VERSION),
+    )
+
+    root.set(
+        TDL_LAYOUT_ATTR,
+        json.dumps(
+            diagram.layout_commands,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ),
+    )
 
     rel_queues: Dict[Tuple[str, str], List[Dict[str, str]]] = defaultdict(list)
 
     for assoc in diagram.associations:
-        if not assoc.is_binary():
+        if len(assoc.ends) < 2:
             continue
-        src = assoc.ends[0].participant.name
-        tgt = assoc.ends[1].participant.name
-        rel_queues[(src, tgt)].append(
-            {
-                "data-type": "association",
-                "data-src": src,
-                "data-tgt": tgt,
-                "data-name": assoc.name or "",
-                "data-derived": str(assoc.is_derived).lower(),
-            }
-        )
+
+        src_end = assoc.ends[0]
+        tgt_end = assoc.ends[1]
+
+        src = src_end.participant.name
+        tgt = tgt_end.participant.name
+
+        assoc_attrs = {
+            "data-type": "association",
+            "data-src": src,
+            "data-tgt": tgt,
+            "data-name": assoc.name or "",
+            "data-derived": str(assoc.is_derived).lower(),
+            "data-src-aggregation": src_end.aggregation.value,
+            "data-tgt-aggregation": tgt_end.aggregation.value,
+        }
+
+        if src_end.role is not None:
+            assoc_attrs["data-src-role"] = src_end.role
+
+        if tgt_end.role is not None:
+            assoc_attrs["data-tgt-role"] = tgt_end.role
+
+        if src_end.multiplicity is not None:
+            assoc_attrs["data-src-multiplicity"] = str(
+                src_end.multiplicity
+            )
+
+        if tgt_end.multiplicity is not None:
+            assoc_attrs["data-tgt-multiplicity"] = str(
+                tgt_end.multiplicity
+            )
+
+        if src_end.navigable is not None:
+            assoc_attrs["data-src-navigable"] = str(
+                src_end.navigable
+            ).lower()
+
+        if tgt_end.navigable is not None:
+            assoc_attrs["data-tgt-navigable"] = str(
+                tgt_end.navigable
+            ).lower()
+
+        rel_queues[(src, tgt)].append(assoc_attrs)
+
     for gen in diagram.generalizations:
         src = gen.specific.name
         tgt = gen.general.name
@@ -205,8 +437,21 @@ def enrich_svg_with_data_attrs(
             g.set("data-abstract", str(uml_cls.is_abstract).lower())
             g.set("data-attributes-count", str(len(uml_cls.attributes)))
             g.set("data-operations-count", str(len(uml_cls.operations)))
+            g.set("data-model",
+                json.dumps(
+                    uml_cls.model_dump(mode="json"),
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                ),
+            )
 
         elif "edge" in cls_attr:
+            if (
+                    "layout-edge" in cls_attr
+                    or (g.get("id") or "").startswith("layout-edge-")
+            ):
+                continue
+
             title_el = next((c for c in list(g) if c.tag.endswith("title")), None)
             if title_el is None or not title_el.text or "->" not in title_el.text:
                 continue

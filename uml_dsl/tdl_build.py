@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Optional
 
 from .diagram import ClassDiagram, ClassPosition
-from .enums import Changeability, DependencyStereotype, Visibility
+from .enums import Changeability, DependencyStereotype, Visibility, AggregationKind
 from .models import Attribute, Class, MultiplicityRange, Operation, Parameter
 from .relationships import Association, AssociationEnd, Dependency, Generalization, Realization
 from .tdl_ast import (
@@ -27,16 +27,35 @@ def _visibility(s: Optional[str]):
     return {"+": Visibility.PUBLIC, "-": Visibility.PRIVATE, "#": Visibility.PROTECTED, "~": Visibility.PACKAGE}.get(s)
 
 
-def _parse_multiplicity(s: Optional[str]) -> Optional[MultiplicityRange]:
-    if not s or s == "*":
+def _parse_multiplicity(
+    s: Optional[str],
+) -> Optional[MultiplicityRange]:
+    if s is None or not s.strip():
+        return None
+
+    if s == "*":
         return MultiplicityRange(lower=0, upper=None)
+
     if ".." in s:
-        parts = s.split("..")
-        lo = int(parts[0].strip())
-        up = None if parts[1].strip() == "*" else int(parts[1].strip())
-        return MultiplicityRange(lower=lo, upper=up)
-    n = int(s)
-    return MultiplicityRange(lower=n, upper=n)
+        lower_text, upper_text = s.split("..", 1)
+
+        lower = int(lower_text.strip())
+        upper = (
+            None
+            if upper_text.strip() == "*"
+            else int(upper_text.strip())
+        )
+
+        return MultiplicityRange(
+            lower=lower,
+            upper=upper,
+        )
+
+    value = int(s)
+    return MultiplicityRange(
+        lower=value,
+        upper=value,
+    )
 
 
 def _map_type(t: Optional[str]) -> Optional[str]:
@@ -127,36 +146,83 @@ def build_diagram(doc: Document, title: str = "Диаграмма TDL") -> Class
                 raise ValueError(f"Участник ассоциации не найден: {decl.end1.participant} или {decl.end2.participant}")
             mult1 = _parse_multiplicity(decl.end1.multiplicity)
             mult2 = _parse_multiplicity(decl.end2.multiplicity)
-            e1 = AssociationEnd(participant=c1, multiplicity=mult1, role=decl.end1.role, navigable=True)
-            e2 = AssociationEnd(participant=c2, multiplicity=mult2, role=decl.end2.role, navigable=False)
+            e1 = AssociationEnd(
+                participant=c1,
+                multiplicity=mult1,
+                role=decl.end1.role,
+                navigable=True,
+                aggregation=_aggregation(decl.end1.aggregation),
+            )
+
+            e2 = AssociationEnd(
+                participant=c2,
+                multiplicity=mult2,
+                role=decl.end2.role,
+                navigable=False,
+                aggregation=_aggregation(decl.end2.aggregation),
+            )
             diagram.add_association(Association(ends=[e1, e2], name=decl.name, is_derived=decl.is_derived))
 
     # 3) Размещение
     if doc.layout and doc.layout.commands:
         for cmd in doc.layout.commands:
-            if isinstance(cmd, FixCmd):
+            if isinstance(cmd, AlignCmd):
+                diagram.layout_commands.append(
+                    {
+                        "kind": "align",
+                        "where": cmd.where,
+                        "elements": list(cmd.elements),
+                    }
+                )
+
+            elif isinstance(cmd, DistributeCmd):
+                diagram.layout_commands.append(
+                    {
+                        "kind": "distribute",
+                        "axis": cmd.axis,
+                        "elements": list(cmd.elements),
+                        "step": cmd.step,
+                    }
+                )
+
+            elif isinstance(cmd, BindCmd):
+                diagram.layout_commands.append(
+                    {
+                        "kind": "bind",
+                        "elem1": cmd.elem1,
+                        "direction": cmd.direction,
+                        "elem2": cmd.elem2,
+                    }
+                )
+
+            elif isinstance(cmd, FixCmd):
+                diagram.layout_commands.append(
+                    {
+                        "kind": "fix",
+                        "element": cmd.element,
+                        "x": cmd.x,
+                        "y": cmd.y,
+                    }
+                )
+
                 cls = diagram.classifiers.get(cmd.element)
                 if cls:
-                    w, h = cls.get_box_size()
+                    width, height = cls.get_box_size()
                     diagram.positions[cmd.element] = ClassPosition(
-                        classifier_name=cmd.element, x=cmd.x, y=cmd.y, width=w, height=h
+                        classifier_name=cmd.element,
+                        x=cmd.x,
+                        y=cmd.y,
+                        width=width,
+                        height=height,
                     )
-        placed = set(diagram.positions.keys())
-        unplaced = [n for n in diagram.classifiers if n not in placed]
-        if unplaced:
-            for idx, name in enumerate(unplaced):
-                cls = diagram.classifiers[name]
-                w, h = cls.get_box_size()
-                row = idx // 3
-                col = idx % 3
-                diagram.positions[name] = ClassPosition(
-                    classifier_name=name,
-                    x=40 + col * 380,
-                    y=40 + row * 280,
-                    width=w,
-                    height=h,
-                )
-    else:
-        diagram.auto_layout(cols=3, spacing_x=380, spacing_y=280, start_x=40, start_y=40)
 
     return diagram
+
+def _aggregation(value: Optional[str]) -> AggregationKind:
+    if value == "aggregation":
+        return AggregationKind.AGGREGATION
+
+    if value == "composition":
+        return AggregationKind.COMPOSITION
+
+    return AggregationKind.NONE

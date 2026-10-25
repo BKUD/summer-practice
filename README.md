@@ -1,116 +1,287 @@
 # ontol_v3_students
 
-## Полная документация
+Система для текстового описания, генерации, проверки и обратного восстановления UML-диаграмм классов.
 
-📖 **[PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)** — подробное описание проекта, архитектуры, взаимосвязей файлов и итогов работы.
+## Возможности
 
-## Краткий обзор
+- русскоязычный язык **TDL (Text Diagram Language)**;
+- строгая UML-модель на **Pydantic v2**;
+- генерация **DOT** и автоматический рендеринг через **Graphviz**;
+- SVG с семантическими `data-*` атрибутами;
+- обратный разбор **SVG → Pydantic**;
+- сериализация **Pydantic → TDL**;
+- семантическая валидация диаграмм;
+- команды размещения элементов;
+- поддержка legacy SVG;
+- CLI и веб-интерфейс на **Streamlit**;
+- экспорт в SVG, PNG и JPG.
 
-**ontol_v3_students** — система для работы с UML-диаграммами классов:
+Полное описание архитектуры и модулей находится в [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md).
 
-- **Text Diagram Language (TDL)** → **SVG** через Graphviz
-- **Обратный парсинг** SVG → Pydantic-модели
-- **Семантическая валидация** диаграмм
-- **Веб-интерфейс** на Streamlit
-
-## Быстрый старт
-
-```bash
-# Установка зависимостей
-pip install -r requirements.txt
-
-# Генерация SVG из TDL
-python -m uml_dsl.tdl_run examples/example.tdl
-
-# Запуск веб-интерфейса
-streamlit run uml_dsl/app.py
-```
+---
 
 ## Архитектура
 
-**TDL текст** → Лексер → Парсер → AST → Сборка модели → **Graphviz** → SVG с data-атрибутами ↔ **Обратный парсинг**
+```text
+TDL
+→ Lexer
+→ Parser
+→ AST
+→ Pydantic
+→ DOT
+→ Graphviz
+→ SVG с data-атрибутами
+→ Pydantic
+→ TDL
+```
 
-### Ключевые компоненты
-- `uml_dsl/models.py` — базовые модели UML
-- `uml_dsl/diagram.py` — диаграмма и валидация
-- `uml_dsl/graphviz_render.py` — генерация SVG
-- `uml_dsl/svg_parser.py` — парсинг SVG
-- `uml_dsl/app.py` — веб-интерфейс
+Основные модули:
 
-## Тестирование
+- `uml_dsl/models.py` — UML-классы, атрибуты, операции и параметры;
+- `uml_dsl/relationships.py` — ассоциации, зависимости, обобщения и реализации;
+- `uml_dsl/diagram.py` — контейнер диаграммы и семантическая валидация;
+- `uml_dsl/tdl_lexer.py` — лексический анализ TDL;
+- `uml_dsl/tdl_parser.py` — синтаксический анализ TDL;
+- `uml_dsl/tdl_ast.py` — абстрактное синтаксическое дерево;
+- `uml_dsl/tdl_build.py` — построение Pydantic-модели;
+- `uml_dsl/graphviz_render.py` — генерация DOT и SVG;
+- `uml_dsl/svg_metadata.py` — версия и ключи SVG-метаданных;
+- `uml_dsl/svg_parser.py` — обратный разбор SVG;
+- `uml_dsl/tdl_serializer.py` — сериализация модели обратно в TDL;
+- `uml_dsl/tdl_run.py` — программный API и CLI;
+- `uml_dsl/app.py` — Streamlit-интерфейс;
+- `uml_dsl/export.py` — экспорт PNG/JPG.
 
-```bash
-# Генерация тестовых данных
-cd examples
-python -m imported_examples
+---
 
-# Тестирование парсера
-python -m test_parser
+## Поддерживаемые элементы UML
+
+- классы и абстрактные классы;
+- атрибуты;
+- операции и параметры;
+- видимость;
+- типы и кратности;
+- ассоциации;
+- роли полюсов;
+- навигация;
+- агрегация;
+- композиция;
+- зависимости;
+- обобщения;
+- реализации.
+
+Поддерживаются декларативные команды размещения: выравнивание, распределение, привязка и фиксация.
+
+---
+
+## Требования
+
+- Python 3.10 или новее;
+- системный Graphviz;
+- команда `dot` должна быть доступна в `PATH`.
+
+Проверка Graphviz:
+
+```powershell
+dot -V
+Get-Command dot
+```
+
+Проект вызывает системный `dot` напрямую. Python-пакет `graphviz` не требуется.
+
+---
+
+## Установка
+
+### Windows PowerShell
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+Если PowerShell блокирует активацию:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+Для разработки и тестирования:
+
+```powershell
+python -m pip install -r requirements-dev.txt
 ```
 
 ---
 
-*Подробная документация: [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)*
+## Быстрый старт
+
+### Генерация SVG из TDL
+
+```powershell
+python -m uml_dsl.tdl_run `
+  .\examples\robot_biologist.tdl `
+  -o .\output\robot.svg
+```
+
+Параметр `-o` / `--output` задаёт путь сохранения SVG.
+
+### Запуск Streamlit
+
+```powershell
+python -m streamlit run uml_dsl/app.py
+```
+
+После запуска приложение обычно доступно по адресу:
+
+```text
+http://localhost:8501
+```
+
+В интерфейсе доступны:
+
+- ввод или загрузка TDL;
+- генерация SVG;
+- превью диаграммы;
+- загрузка и валидация SVG;
+- просмотр ошибок и предупреждений;
+- экспорт в SVG, PNG и JPG.
 
 ---
 
-# Список изменений
+## Программный API
 
-## Шаг 1: Добавление data-атрибутов в классы
-**Файл:** `models.py`
-**Метод:** `to_svg()`
-**Что сделано:**
-- Добавлены data-атрибуты для обратного парсинга:
-  - `data-id`, `data-name`, `data-type="class"`
-  - `data-stereotype`, `data-abstract`
-  - `data-attributes-count`, `data-operations-count`
+```python
+from uml_dsl.tdl_run import tdl_to_svg
 
-## Шаг 2: Добавление data-атрибутов в отношения
-**Файл:** `diagram.py`
-**Методы:** `_render_association_svg()`, `_render_dependency_svg()`, `_render_generalization_svg()`, `_render_realization_svg()`, `_render_nary_association_svg()`
-**Что сделано:**
-- Для ассоциаций: `data-src`, `data-tgt`, `data-type="association"`, `data-name`, `data-derived`, `data-src-multiplicity`, `data-tgt-multiplicity`, `data-src-role`, `data-tgt-role`, `data-src-navigable`, `data-tgt-navigable`, `data-src-aggregation`, `data-tgt-aggregation`
-- Для зависимостей: `data-src`, `data-tgt`, `data-type="dependency"`, `data-stereotype`
-- Для обобщений: `data-src`, `data-tgt`, `data-type="generalization"`, `data-substitutable`
-- Для реализаций: `data-src`, `data-tgt`, `data-type="realization"`
-- Для n-арных ассоциаций: `data-type="nary-association"`, `data-name`, `data-derived`, `data-arity`, `data-participants`
+source = """
+КЛАСС Пример
+КОНЕЦ КЛАСС
+"""
 
-## Шаг 3: Создание парсера SVG → Pydantic
-**Новый файл:** `svg_parser.py`
-**Функции:**
-- `parse_transform()` — извлечение координат из transform="translate(x,y)"
-- `parse_svg_to_diagram()` — главная функция парсинга
-- `multiplicity_range_from_str()` — парсинг строк кратности
+svg = tdl_to_svg(source)
+```
 
-**Что делает:**
-- Извлекает классы из `data-type="class"`
-- Извлекает ассоциации из `data-type="association"`
-- Извлекает зависимости из `data-type="dependency"`
-- Извлекает обобщения из `data-type="generalization"`
-- Извлекает реализации из `data-type="realization"`
-- Восстанавливает позиции классов из transform
+Обратный парсинг:
 
-## Шаг 4: Тестирование парсера
-**Новый файл:** `test_parser.py`
-**Функции:**
-- `test_parser()` — проверка парсинга всех SVG в папке
-- `test_roundtrip()` — проверка полного цикла: Pydantic → SVG → Pydantic → SVG
+```python
+from uml_dsl.svg_parser import parse_svg_to_diagram
 
-**Результат:** Roundtrip успешен, файлы идентичны.
+result = parse_svg_to_diagram(svg)
 
-## Шаг 5: Streamlit-приложение
-**Новый файл:** `app.py`
-**Компоненты:**
-- Загрузка SVG-файла
-- Превью диаграммы
-- Кнопка валидации
-- Отображение статистики (классы, ассоциации, обобщения, зависимости)
-- Детали модели в JSON
-- Боковая панель с описанием
-- Кнопки для быстрой загрузки примеров
+if result.success:
+    diagram = result.diagram
+else:
+    print(result.errors)
+```
 
-**Запуск:** `streamlit run app.py`
+Сериализация обратно в TDL:
 
-## Итог
-Создан работающий прототип с полным циклом:
-JSON (через imported_examples.py) → Pydantic → SVG (с тегами) → Parser → Pydantic → Валидация → Интерфейс
+```python
+from uml_dsl.tdl_serializer import diagram_to_tdl
+
+tdl = diagram_to_tdl(diagram)
+```
+
+---
+
+## SVG-метаданные
+
+Сгенерированный SVG содержит служебные атрибуты:
+
+- `data-tdl-schema`;
+- `data-layout`;
+- `data-model`;
+- `data-type`;
+- `data-src`;
+- `data-tgt`;
+- роли, кратности, навигацию и типы агрегации.
+
+Текущая версия:
+
+```xml
+data-tdl-schema="1"
+```
+
+SVG без версии поддерживаются как legacy-формат с предупреждением.
+
+---
+
+## Тестирование
+
+Установить зависимости:
+
+```powershell
+python -m pip install -r requirements-dev.txt
+```
+
+Запустить все тесты:
+
+```powershell
+python -m pytest -q
+```
+
+Проверенный результат:
+
+```text
+22 passed
+```
+
+Отдельная проверка CLI:
+
+```powershell
+python -m pytest tests/test_tdl_run.py -q
+```
+
+---
+
+## Структура репозитория
+
+```text
+ontol_v3_students/
+├── uml_dsl/
+│   ├── app.py
+│   ├── diagram.py
+│   ├── enums.py
+│   ├── export.py
+│   ├── graphviz_render.py
+│   ├── models.py
+│   ├── relationships.py
+│   ├── svg_metadata.py
+│   ├── svg_parser.py
+│   ├── tdl_ast.py
+│   ├── tdl_build.py
+│   ├── tdl_lexer.py
+│   ├── tdl_parser.py
+│   ├── tdl_run.py
+│   └── tdl_serializer.py
+├── examples/
+│   └── robot_biologist.tdl
+├── tests/
+├── requirements.txt
+├── requirements-dev.txt
+├── PROJECT_DOCUMENTATION.md
+└── README.md
+```
+
+---
+
+## Ограничения
+
+- основной поддерживаемый тип — UML-диаграмма классов;
+- команды размещения задают ограничения Graphviz, а не точные пиксельные координаты;
+- интерактивное drag-and-drop редактирование не входит в текущую реализацию;
+- полноценное восстановление возможно только для SVG с семантическими `data-*` атрибутами;
+- сложные N-арные ассоциации могут требовать дополнительного расширения сериализатора.
+
+---
+
+## Документация
+
+Подробное описание архитектуры, форматов, модулей, тестов и ограничений:
+
+**[PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)**

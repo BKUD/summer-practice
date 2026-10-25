@@ -357,6 +357,11 @@ class ClassDiagram(BaseModel):
         description="Позиции классификаторов на холсте.",
     )
 
+    layout_commands: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Нормализованные команды размещения TDL для Graphviz.",
+    )
+
     # ──── Удобные методы добавления ────────────────────────────────────
 
     def add_classifier(self, c: Classifier) -> "ClassDiagram":

@@ -1,0 +1,121 @@
+<ns0:svg xmlns:ns0="http://www.w3.org/2000/svg" width="1667pt" height="396pt" viewBox="0.00 0.00 1667.00 396.00" data-tdl-schema="1" data-layout="[{&quot;kind&quot;:&quot;distribute&quot;,&quot;axis&quot;:&quot;ГОРИЗОНТАЛИ&quot;,&quot;elements&quot;:[&quot;РоботБиолог&quot;,&quot;ЛабиринтРоботБиолог&quot;,&quot;ЯчейкаРоботБиолог&quot;,&quot;ТипЯчеекБио&quot;],&quot;step&quot;:10},{&quot;kind&quot;:&quot;bind&quot;,&quot;elem1&quot;:&quot;Итератор&quot;,&quot;direction&quot;:&quot;ЛЕВЕЕ&quot;,&quot;elem2&quot;:&quot;РоботБиолог&quot;},{&quot;kind&quot;:&quot;bind&quot;,&quot;elem1&quot;:&quot;ТипНаправленийБиоНапр&quot;,&quot;direction&quot;:&quot;ВЫШЕ&quot;,&quot;elem2&quot;:&quot;Итератор&quot;}]">
+<ns0:g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(21.6 374.6)">
+<ns0:title>UML</ns0:title>
+<ns0:polygon fill="white" stroke="none" points="-21.6,21.6 -21.6,-374.6 1645.1,-374.6 1645.1,21.6 -21.6,21.6" />
+
+
+<ns0:g id="edge8" class="uml-edge" data-type="association" data-src="РоботБиолог" data-tgt="ЛабиринтРоботБиолог" data-name="содержит" data-derived="false" data-src-aggregation="composition" data-tgt-aggregation="none" data-src-multiplicity="0..*" data-tgt-multiplicity="1" data-src-navigable="true" data-tgt-navigable="false">
+<ns0:title>C0-&gt;C1</ns0:title>
+<ns0:path fill="none" stroke="black" d="M554.96,-76C594.93,-76 640.68,-76 685.52,-76" />
+<ns0:polygon fill="black" stroke="black" points="554.81,-76 548.81,-80 542.81,-76 548.81,-72 554.81,-76" />
+<ns0:text xml:space="preserve" text-anchor="middle" x="613.69" y="-80.95" font-family="Arial" font-size="9.00">содержит</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="middle" x="667.39" y="-64.25" font-family="Arial" font-size="9.00">1</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="middle" x="560.04" y="-81.15" font-family="Arial" font-size="9.00">0..*</ns0:text>
+</ns0:g>
+
+
+<ns0:g id="edge7" class="uml-edge" data-type="association" data-src="ЛабиринтРоботБиолог" data-tgt="ЯчейкаРоботБиолог" data-name="содержит" data-derived="false" data-src-aggregation="composition" data-tgt-aggregation="none" data-src-multiplicity="0..*" data-tgt-multiplicity="1..*" data-src-navigable="true" data-tgt-navigable="false">
+<ns0:title>C1-&gt;C2</ns0:title>
+<ns0:path fill="none" stroke="black" d="M1127.63,-76C1175.4,-76 1222.35,-76 1258.99,-76" />
+<ns0:polygon fill="black" stroke="black" points="1127.71,-76 1121.71,-80 1115.71,-76 1121.71,-72 1127.71,-76" />
+<ns0:text xml:space="preserve" text-anchor="middle" x="1186.94" y="-80.95" font-family="Arial" font-size="9.00">содержит</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="middle" x="1240.87" y="-64.25" font-family="Arial" font-size="9.00">1..*</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="middle" x="1132.94" y="-81.15" font-family="Arial" font-size="9.00">0..*</ns0:text>
+</ns0:g>
+
+
+<ns0:g id="edge6" class="uml-edge" data-type="association" data-src="ЯчейкаРоботБиолог" data-tgt="ТипЯчеекБио" data-name="содержит" data-derived="false" data-src-aggregation="composition" data-tgt-aggregation="none" data-src-multiplicity="0..*" data-tgt-multiplicity="1" data-src-navigable="true" data-tgt-navigable="false">
+<ns0:title>C2-&gt;C4</ns0:title>
+<ns0:path fill="none" stroke="black" d="M1414.03,-76C1458.18,-76 1510.2,-76 1544.98,-76" />
+<ns0:polygon fill="black" stroke="black" points="1414.12,-76 1408.12,-80 1402.12,-76 1408.12,-72 1414.12,-76" />
+<ns0:text xml:space="preserve" text-anchor="middle" x="1473.06" y="-80.95" font-family="Arial" font-size="9.00">содержит</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="middle" x="1526.86" y="-64.25" font-family="Arial" font-size="9.00">1</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="middle" x="1419.34" y="-81.15" font-family="Arial" font-size="9.00">0..*</ns0:text>
+</ns0:g>
+
+
+
+<ns0:g id="node1" class="uml-class" data-id="РоботБиолог" data-name="РоботБиолог" data-type="class" data-stereotype="" data-abstract="false" data-attributes-count="1" data-operations-count="8" data-model="{&quot;name&quot;:&quot;РоботБиолог&quot;,&quot;visibility&quot;:null,&quot;multiplicity&quot;:null,&quot;stereotype&quot;:null,&quot;is_abstract&quot;:false,&quot;attributes&quot;:[{&quot;name&quot;:&quot;лабиринт&quot;,&quot;visibility&quot;:&quot;-&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:&quot;ЛабиринтРоботБиолог&quot;,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null}],&quot;operations&quot;:[{&quot;name&quot;:&quot;ПойтиКРастению&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[],&quot;return_type&quot;:&quot;ЯчейкаРоботБиолог&quot;,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false},{&quot;name&quot;:&quot;ОтойтиБио&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[],&quot;return_type&quot;:&quot;ЯчейкаРоботБиолог&quot;,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false},{&quot;name&quot;:&quot;СместитьсяВлево&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[],&quot;return_type&quot;:&quot;ЯчейкаРоботБиолог&quot;,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false},{&quot;name&quot;:&quot;СместитьсяВправо&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[],&quot;return_type&quot;:&quot;ЯчейкаРоботБиолог&quot;,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false},{&quot;name&quot;:&quot;Подняться&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[],&quot;return_type&quot;:&quot;ЯчейкаРоботБиолог&quot;,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false},{&quot;name&quot;:&quot;Спуститься&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[],&quot;return_type&quot;:&quot;ЯчейкаРоботБиолог&quot;,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false},{&quot;name&quot;:&quot;Растение&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[],&quot;return_type&quot;:null,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false},{&quot;name&quot;:&quot;Пробирка&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[],&quot;return_type&quot;:null,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false}],&quot;tagged_values&quot;:[]}">
+<ns0:title>C0</ns0:title>
+<ns0:text xml:space="preserve" text-anchor="start" x="401.12" y="-137.5" font-family="Arial" font-weight="bold" font-size="10.00">РоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="332.12" y="-114.25" font-family="Arial" font-size="10.00">- лабиринт : ЛабиринтРоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="332.12" y="-92.25" font-family="Arial" font-size="10.00">+ ПойтиКРастению() : ЯчейкаРоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="332.12" y="-80.25" font-family="Arial" font-size="10.00">+ ОтойтиБио() : ЯчейкаРоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="332.12" y="-68.25" font-family="Arial" font-size="10.00">+ СместитьсяВлево() : ЯчейкаРоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="332.12" y="-56.25" font-family="Arial" font-size="10.00">+ СместитьсяВправо() : ЯчейкаРоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="332.12" y="-44.25" font-family="Arial" font-size="10.00">+ Подняться() : ЯчейкаРоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="332.12" y="-32.25" font-family="Arial" font-size="10.00">+ Спуститься() : ЯчейкаРоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="332.12" y="-20.25" font-family="Arial" font-size="10.00">+ Растение()</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="404.5" y="-8.25" font-family="Arial" font-size="10.00">+ Пробирка()</ns0:text>
+<ns0:polygon fill="black" stroke="black" points="326.12,-129 326.12,-129 542.12,-129 542.12,-129 326.12,-129" />
+<ns0:polygon fill="black" stroke="black" points="326.12,-107 326.12,-107 542.12,-107 542.12,-107 326.12,-107" />
+<ns0:polygon fill="none" stroke="black" points="326.12,0 326.12,-152 542.12,-152 542.12,0 326.12,0" />
+</ns0:g>
+
+<ns0:g id="node2" class="uml-class" data-id="ЛабиринтРоботБиолог" data-name="ЛабиринтРоботБиолог" data-type="class" data-stereotype="" data-abstract="false" data-attributes-count="3" data-operations-count="3" data-model="{&quot;name&quot;:&quot;ЛабиринтРоботБиолог&quot;,&quot;visibility&quot;:null,&quot;multiplicity&quot;:null,&quot;stereotype&quot;:null,&quot;is_abstract&quot;:false,&quot;attributes&quot;:[{&quot;name&quot;:&quot;ширина&quot;,&quot;visibility&quot;:&quot;-&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:&quot;int&quot;,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;длина&quot;,&quot;visibility&quot;:&quot;-&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:&quot;int&quot;,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;ячейки&quot;,&quot;visibility&quot;:&quot;-&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:&quot;ЯчейкаРоботБиолог&quot;,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null}],&quot;operations&quot;:[{&quot;name&quot;:&quot;ПолучитьСоседнююЯчейку&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[{&quot;name&quot;:&quot;текущая_ячейка&quot;,&quot;type_&quot;:null,&quot;direction&quot;:&quot;in&quot;,&quot;default&quot;:null},{&quot;name&quot;:&quot;направление_поиска&quot;,&quot;type_&quot;:null,&quot;direction&quot;:&quot;in&quot;,&quot;default&quot;:null}],&quot;return_type&quot;:&quot;ЯчейкаРоботБиолог&quot;,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false},{&quot;name&quot;:&quot;ПолучитьИтератор&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[],&quot;return_type&quot;:&quot;Итератор&quot;,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false},{&quot;name&quot;:&quot;ИнициализироватьЛабиринт&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[{&quot;name&quot;:&quot;тип_ячейки&quot;,&quot;type_&quot;:null,&quot;direction&quot;:&quot;in&quot;,&quot;default&quot;:null}],&quot;return_type&quot;:null,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false}],&quot;tagged_values&quot;:[]}">
+<ns0:title>C1</ns0:title>
+<ns0:text xml:space="preserve" text-anchor="start" x="843.12" y="-119.5" font-family="Arial" font-weight="bold" font-size="10.00">ЛабиринтРоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="691.25" y="-96.25" font-family="Arial" font-size="10.00">- ширина : int</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="691.25" y="-84.25" font-family="Arial" font-size="10.00">- длина : int</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="691.25" y="-72.25" font-family="Arial" font-size="10.00">- ячейки : ЯчейкаРоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="691.25" y="-50.25" font-family="Arial" font-size="10.00">+ ПолучитьСоседнююЯчейку(текущая_ячейка, направление_поиска) : ЯчейкаРоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="691.25" y="-38.25" font-family="Arial" font-size="10.00">+ ПолучитьИтератор() : Итератор</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="802.25" y="-26.25" font-family="Arial" font-size="10.00">+ ИнициализироватьЛабиринт(тип_ячейки)</ns0:text>
+<ns0:polygon fill="black" stroke="black" points="685.25,-111 685.25,-111 1115,-111 1115,-111 685.25,-111" />
+<ns0:polygon fill="black" stroke="black" points="685.25,-65 685.25,-65 1115,-65 1115,-65 685.25,-65" />
+<ns0:polygon fill="none" stroke="black" points="685.25,-18 685.25,-134 1115,-134 1115,-18 685.25,-18" />
+</ns0:g>
+
+<ns0:g id="node3" class="uml-class" data-id="ЯчейкаРоботБиолог" data-name="ЯчейкаРоботБиолог" data-type="class" data-stereotype="" data-abstract="false" data-attributes-count="2" data-operations-count="0" data-model="{&quot;name&quot;:&quot;ЯчейкаРоботБиолог&quot;,&quot;visibility&quot;:null,&quot;multiplicity&quot;:null,&quot;stereotype&quot;:null,&quot;is_abstract&quot;:false,&quot;attributes&quot;:[{&quot;name&quot;:&quot;ячейка_робота&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:&quot;bool&quot;,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;тип_ячейки&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:&quot;ТипЯчеекБио&quot;,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null}],&quot;operations&quot;:[],&quot;tagged_values&quot;:[]}">
+<ns0:title>C2</ns0:title>
+<ns0:text xml:space="preserve" text-anchor="start" x="1279.5" y="-101.5" font-family="Arial" font-weight="bold" font-size="10.00">ЯчейкаРоботБиолог</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="1264.88" y="-78.25" font-family="Arial" font-size="10.00">+ ячейка_робота : bool</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="1264.88" y="-66.25" font-family="Arial" font-size="10.00">+ тип_ячейки : ТипЯчеекБио</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="1264.88" y="-44.25" font-family="Arial" font-size="10.00"> </ns0:text>
+<ns0:polygon fill="black" stroke="black" points="1258.88,-93 1258.88,-93 1401.38,-93 1401.38,-93 1258.88,-93" />
+<ns0:polygon fill="black" stroke="black" points="1258.88,-59 1258.88,-59 1401.38,-59 1401.38,-59 1258.88,-59" />
+<ns0:polygon fill="none" stroke="black" points="1258.88,-36 1258.88,-116 1401.38,-116 1401.38,-36 1258.88,-36" />
+</ns0:g>
+
+<ns0:g id="node4" class="uml-class" data-id="Итератор" data-name="Итератор" data-type="class" data-stereotype="" data-abstract="false" data-attributes-count="0" data-operations-count="1" data-model="{&quot;name&quot;:&quot;Итератор&quot;,&quot;visibility&quot;:null,&quot;multiplicity&quot;:null,&quot;stereotype&quot;:null,&quot;is_abstract&quot;:false,&quot;attributes&quot;:[],&quot;operations&quot;:[{&quot;name&quot;:&quot;следующий&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;parameters&quot;:[],&quot;return_type&quot;:&quot;ЯчейкаРоботБиолог&quot;,&quot;is_abstract&quot;:false,&quot;is_query&quot;:false,&quot;concurrency&quot;:&quot;sequential&quot;,&quot;is_leaf&quot;:false}],&quot;tagged_values&quot;:[]}">
+<ns0:title>C3</ns0:title>
+<ns0:text xml:space="preserve" text-anchor="start" x="68.25" y="-95.5" font-family="Arial" font-weight="bold" font-size="10.00">Итератор</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="6" y="-72.25" font-family="Arial" font-size="10.00"> </ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="6" y="-50.25" font-family="Arial" font-size="10.00">+ следующий() : ЯчейкаРоботБиолог</ns0:text>
+<ns0:polygon fill="black" stroke="black" points="0,-87 0,-87 182.25,-87 182.25,-87 0,-87" />
+<ns0:polygon fill="black" stroke="black" points="0,-65 0,-65 182.25,-65 182.25,-65 0,-65" />
+<ns0:polygon fill="none" stroke="black" points="0,-42 0,-110 182.25,-110 182.25,-42 0,-42" />
+</ns0:g>
+
+<ns0:g id="node5" class="uml-class" data-id="ТипЯчеекБио" data-name="ТипЯчеекБио" data-type="class" data-stereotype="" data-abstract="false" data-attributes-count="7" data-operations-count="0" data-model="{&quot;name&quot;:&quot;ТипЯчеекБио&quot;,&quot;visibility&quot;:null,&quot;multiplicity&quot;:null,&quot;stereotype&quot;:null,&quot;is_abstract&quot;:false,&quot;attributes&quot;:[{&quot;name&quot;:&quot;Растение&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;Вода&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;Пробирка&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;Обработано&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;Лаб&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;Финиш&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;Контейнер&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null}],&quot;operations&quot;:[],&quot;tagged_values&quot;:[]}">
+<ns0:title>C4</ns0:title>
+<ns0:text xml:space="preserve" text-anchor="start" x="1550.75" y="-131.5" font-family="Arial" font-weight="bold" font-size="10.00">ТипЯчеекБио</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="1550.75" y="-108.25" font-family="Arial" font-size="10.00">+ Растение</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="1550.75" y="-96.25" font-family="Arial" font-size="10.00">+ Вода</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="1550.75" y="-84.25" font-family="Arial" font-size="10.00">+ Пробирка</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="1550.75" y="-72.25" font-family="Arial" font-size="10.00">+ Обработано</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="1550.75" y="-60.25" font-family="Arial" font-size="10.00">+ Лаб</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="1550.75" y="-48.25" font-family="Arial" font-size="10.00">+ Финиш</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="1554.88" y="-36.25" font-family="Arial" font-size="10.00">+ Контейнер</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="1550.75" y="-14.25" font-family="Arial" font-size="10.00"> </ns0:text>
+<ns0:polygon fill="black" stroke="black" points="1544.75,-123 1544.75,-123 1623.5,-123 1623.5,-123 1544.75,-123" />
+<ns0:polygon fill="black" stroke="black" points="1544.75,-29 1544.75,-29 1623.5,-29 1623.5,-29 1544.75,-29" />
+<ns0:polygon fill="none" stroke="black" points="1544.75,-6 1544.75,-146 1623.5,-146 1623.5,-6 1544.75,-6" />
+</ns0:g>
+
+<ns0:g id="node6" class="uml-class" data-id="ТипНаправленийБиоНапр" data-name="ТипНаправленийБиоНапр" data-type="class" data-stereotype="" data-abstract="false" data-attributes-count="6" data-operations-count="0" data-model="{&quot;name&quot;:&quot;ТипНаправленийБиоНапр&quot;,&quot;visibility&quot;:null,&quot;multiplicity&quot;:null,&quot;stereotype&quot;:null,&quot;is_abstract&quot;:false,&quot;attributes&quot;:[{&quot;name&quot;:&quot;БВперёд&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;БНазад&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;БВлево&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;БВправо&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;ДиагБВ&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null},{&quot;name&quot;:&quot;ДиагБН&quot;,&quot;visibility&quot;:&quot;+&quot;,&quot;scope&quot;:&quot;instance&quot;,&quot;redefines&quot;:null,&quot;type_&quot;:null,&quot;multiplicity&quot;:null,&quot;initial_value&quot;:null,&quot;changeability&quot;:null}],&quot;operations&quot;:[],&quot;tagged_values&quot;:[]}">
+<ns0:title>C5</ns0:title>
+<ns0:text xml:space="preserve" text-anchor="start" x="27.38" y="-338.5" font-family="Arial" font-weight="bold" font-size="10.00">ТипНаправленийБиоНапр</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="27.38" y="-315.25" font-family="Arial" font-size="10.00">+ БВперёд</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="27.38" y="-303.25" font-family="Arial" font-size="10.00">+ БНазад</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="27.38" y="-291.25" font-family="Arial" font-size="10.00">+ БВлево</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="27.38" y="-279.25" font-family="Arial" font-size="10.00">+ БВправо</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="27.38" y="-267.25" font-family="Arial" font-size="10.00">+ ДиагБВ</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="30" y="-255.25" font-family="Arial" font-size="10.00">+ ДиагБН</ns0:text>
+<ns0:text xml:space="preserve" text-anchor="start" x="27.38" y="-233.25" font-family="Arial" font-size="10.00"> </ns0:text>
+<ns0:polygon fill="black" stroke="black" points="21.38,-330 21.38,-330 160.88,-330 160.88,-330 21.38,-330" />
+<ns0:polygon fill="black" stroke="black" points="21.38,-248 21.38,-248 160.88,-248 160.88,-248 21.38,-248" />
+<ns0:polygon fill="none" stroke="black" points="21.38,-225 21.38,-353 160.88,-353 160.88,-225 21.38,-225" />
+</ns0:g>
+</ns0:g>
+</ns0:svg>

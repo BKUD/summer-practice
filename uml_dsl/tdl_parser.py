@@ -254,17 +254,36 @@ class Parser:
 
     def _parse_assoc_end(self) -> AssocEnd:
         participant = self.expect_ident()
+
         mult = self._multiplicity_str()
+
         if mult is None and self.at(TokenKind.NUMBER):
             mult = self.advance().value
+
         if mult is None and self.at(TokenKind.STAR):
             self.advance()
             mult = "*"
+
         role = None
         if self.at(TokenKind.COLON):
             self.advance()
             role = self._ident_or_keyword()
-        return AssocEnd(participant=participant, multiplicity=mult, role=role)
+
+        aggregation = None
+
+        if self.at(TokenKind.АГРЕГАЦИЯ):
+            self.advance()
+            aggregation = "aggregation"
+        elif self.at(TokenKind.КОМПОЗИЦИЯ):
+            self.advance()
+            aggregation = "composition"
+
+        return AssocEnd(
+            participant=participant,
+            multiplicity=mult,
+            role=role,
+            aggregation=aggregation,
+        )
 
     def _parse_association(self) -> AssociationDecl:
         self.expect(TokenKind.АССОЦИАЦИЯ)

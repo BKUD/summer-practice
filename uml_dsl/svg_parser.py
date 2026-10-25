@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 from typing import Dict, List, Optional, Tuple, Any
 
 from pydantic import BaseModel, Field
+import json
 
 from .models import (
     Class, Attribute, Operation, Parameter,
@@ -19,6 +20,13 @@ from .relationships import (
 )
 from .diagram import ClassDiagram, ClassPosition
 
+from .svg_metadata import (
+    CURRENT_TDL_SCHEMA_VERSION,
+    LEGACY_TDL_SCHEMA_VERSION,
+    SUPPORTED_TDL_SCHEMA_VERSIONS,
+    TDL_LAYOUT_ATTR,
+    TDL_SCHEMA_ATTR,
+)
 
 class ParseResult(BaseModel):
     """Результат парсинга SVG в Pydantic-модель."""
@@ -40,6 +48,38 @@ def parse_transform(transform_str: str) -> Tuple[float, float]:
     return (0.0, 0.0)
 
 
+def _parse_tdl_schema_version(
+    root: ET.Element,
+    errors: list[str],
+    warnings: list[str],
+) -> int:
+    raw_version = root.get(TDL_SCHEMA_ATTR)
+
+    if raw_version is None:
+        warnings.append(
+            "SVG не содержит data-tdl-schema; "
+            "используется режим совместимости со старым SVG."
+        )
+        return LEGACY_TDL_SCHEMA_VERSION
+
+    try:
+        version = int(raw_version)
+    except (TypeError, ValueError):
+        errors.append(
+            "Некорректная версия SVG-метаданных "
+            f"{TDL_SCHEMA_ATTR}={raw_version!r}."
+        )
+        return LEGACY_TDL_SCHEMA_VERSION
+
+    if version not in SUPPORTED_TDL_SCHEMA_VERSIONS:
+        errors.append(
+            "Неподдерживаемая версия SVG-метаданных: "
+            f"{version}. Текущая версия: "
+            f"{CURRENT_TDL_SCHEMA_VERSION}."
+        )
+
+    return version
+
 def parse_svg_to_diagram(svg_content: str) -> ParseResult:
     """
     Парсит SVG с data-атрибутами и восстанавливает ClassDiagram.
@@ -57,22 +97,72 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
     
     try:
         root = ET.fromstring(svg_content)
-    except ET.ParseError as e:
+        schema_version = _parse_tdl_schema_version(
+            root,
+            errors,
+            warnings,
+        )
+    except ET.ParseError as exc:
         return ParseResult(
             success=False,
-            errors=[f"Ошибка парсинга XML: {e}"]
+            diagram=None,
+            errors=[
+                f"Ошибка парсинга XML: {exc}"
+            ],
+            warnings=[],
         )
     
     # Проверка наличия классов
     class_elements = root.findall('.//*[@data-type="class"]')
+
     if not class_elements:
+        errors.append(
+            "Диаграмма не содержит размеченных классов. "
+            "Убедитесь, что SVG сгенерирован TDL."
+        )
+
         return ParseResult(
             success=False,
-            errors=["Диаграмма не содержит размеченных классов. Убедитесь, что SVG сгенерирован TDL."]
+            diagram=None,
+            errors=errors,
+            warnings=warnings,
         )
     
     # Создаём пустую диаграмму
     diagram = ClassDiagram(title="Imported from SVG")
+
+    layout_json = root.get(TDL_LAYOUT_ATTR)
+
+    if layout_json is not None:
+        try:
+            layout_commands = json.loads(layout_json)
+
+            if not isinstance(layout_commands, list):
+                raise ValueError(
+                    "data-layout должен содержать JSON-массив"
+                )
+
+            if not all(
+                    isinstance(command, dict)
+                    for command in layout_commands
+            ):
+                raise ValueError(
+                    "Каждая команда data-layout "
+                    "должна быть JSON-объектом"
+                )
+
+            diagram.layout_commands = layout_commands
+
+        except (json.JSONDecodeError, ValueError, TypeError) as exc:
+            errors.append(
+                f"Некорректные данные размещения "
+                f"{TDL_LAYOUT_ATTR}: {exc}"
+            )
+    elif schema_version >= CURRENT_TDL_SCHEMA_VERSION:
+        warnings.append(
+            "SVG использует текущую схему метаданных, "
+            "но не содержит data-layout."
+        )
     
     # 1. Сначала парсим все классы (они нужны для ссылок в отношениях)
     class_positions = {}
@@ -82,21 +172,37 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
         if not class_id:
             errors.append(f"Класс без атрибута data-id (элемент {elem.tag})")
             continue
-            
-        # Извлекаем данные из атрибутов
-        name = elem.get('data-name', class_id)
-        stereo = elem.get('data-stereotype')
-        is_abstract = elem.get('data-abstract') == 'true'
-        attr_count = int(elem.get('data-attributes-count', '0'))
-        op_count = int(elem.get('data-operations-count', '0'))
-        
-        # Создаём класс (пока без атрибутов и операций — их нет в SVG)
-        # В реальном парсере нужно будет восстанавливать и их из текста
-        cls = Class(
-            name=name,
-            stereotype=Stereotype(stereo) if stereo else None,
-            is_abstract=is_abstract,
-        )
+
+        model_json = elem.get("data-model")
+
+        if model_json:
+            try:
+                model_data = json.loads(model_json)
+                cls = Class.model_validate(model_data)
+            except (json.JSONDecodeError, ValueError, TypeError) as exc:
+                errors.append(
+                    f"Класс '{class_id}': некорректный data-model: {exc}"
+                )
+                continue
+        else:
+            # Совместимость со старыми SVG, где полной модели ещё не было.
+            name = elem.get("data-name", class_id)
+            stereo = elem.get("data-stereotype")
+            is_abstract = elem.get("data-abstract") == "true"
+
+            cls = Class(
+                name=name,
+                stereotype=Stereotype(stereo) if stereo else None,
+                is_abstract=is_abstract,
+            )
+
+            warnings.append(
+                f"Класс '{name}' не содержит data-model; "
+                "атрибуты и операции восстановить невозможно"
+            )
+
+        name = cls.name
+
         
         diagram.add_classifier(cls)
         
@@ -149,6 +255,9 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
         
         src_nav = elem.get('data-src-navigable')
         tgt_nav = elem.get('data-tgt-navigable')
+
+        src_role = elem.get("data-src-role")
+        tgt_role = elem.get("data-tgt-role")
         
         # Парсим кратность с обработкой ошибок
         src_mult_obj = None
@@ -164,19 +273,25 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
                 tgt_mult_obj = MultiplicityRange.from_str(tgt_multiplicity)
             except (ValueError, IndexError) as e:
                 warnings.append(f"Ассоциация '{src}→{tgt}': некорректная кратность целевой '{tgt_multiplicity}'")
-        
+
         end1 = AssociationEnd(
             participant=src_cls,
+            role=src_role or None,
             multiplicity=src_mult_obj,
             aggregation=AggregationKind(src_agg),
-            navigable={'true': True, 'false': False}.get(src_nav) if src_nav else None
+            navigable={"true": True, "false": False}.get(src_nav)
+            if src_nav
+            else None,
         )
-        
+
         end2 = AssociationEnd(
             participant=tgt_cls,
+            role=tgt_role or None,
             multiplicity=tgt_mult_obj,
             aggregation=AggregationKind(tgt_agg),
-            navigable={'true': True, 'false': False}.get(tgt_nav) if tgt_nav else None
+            navigable={"true": True, "false": False}.get(tgt_nav)
+            if tgt_nav
+            else None,
         )
         
         assoc = Association(
@@ -275,10 +390,10 @@ def parse_svg_to_diagram(svg_content: str) -> ParseResult:
     
     # Возвращаем результат с диаграммой и любыми накопленными предупреждениями
     return ParseResult(
-        success=True,
+        success=not errors,
         diagram=diagram,
-        warnings=warnings if not errors else [],  # не включаем предупреждения если были ошибки
-        errors=errors
+        errors=errors,
+        warnings=warnings,
     )
 
 

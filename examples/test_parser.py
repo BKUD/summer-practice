@@ -7,6 +7,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from pathlib import Path
+from uml_dsl.graphviz_render import diagram_to_graphviz_svg
 
 # Добавляем путь к проекту
 sys.path.insert(0, str(Path(__file__).parent))
@@ -122,10 +123,37 @@ def test_roundtrip():
         svg_content = f.read()
     
     # Парсим
-    diagram = parse_svg_to_diagram(svg_content)
-    
-    # Генерируем новый SVG из распарсенной модели
-    new_svg = diagram.to_svg(interactive=True)
+    parse_result = parse_svg_to_diagram(svg_content)
+
+    assert parse_result.success, (
+            "SVG не удалось распарсить:\n"
+            + "\n".join(parse_result.errors)
+    )
+    assert parse_result.diagram is not None, "Парсер не вернул диаграмму"
+
+    diagram = parse_result.diagram
+
+    # Генерируем новый SVG через Graphviz
+    new_svg = diagram_to_graphviz_svg(diagram)
+
+    # Повторно парсим уже Graphviz SVG
+    roundtrip_result = parse_svg_to_diagram(new_svg)
+
+    assert roundtrip_result.success, (
+            "Graphviz SVG не удалось распарсить:\n"
+            + "\n".join(roundtrip_result.errors)
+    )
+    assert not roundtrip_result.errors, "\n".join(roundtrip_result.errors)
+    assert roundtrip_result.diagram is not None
+
+    restored_diagram = roundtrip_result.diagram
+
+    # Проверяем, что базовая структура не потерялась
+    assert set(restored_diagram.classifiers) == set(diagram.classifiers)
+    assert len(restored_diagram.associations) == len(diagram.associations)
+    assert len(restored_diagram.dependencies) == len(diagram.dependencies)
+    assert len(restored_diagram.generalizations) == len(diagram.generalizations)
+    assert len(restored_diagram.realizations) == len(diagram.realizations)
     
     # Сохраняем для сравнения
     output_file = svg_dir / "roundtrip_test.svg"
